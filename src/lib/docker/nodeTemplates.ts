@@ -5,6 +5,28 @@ import { ComposeService } from './composeFile';
 // simple function to remove all line-breaks and extra white-space inside of a string
 const trimInside = (text: string): string => text.replace(/\s+/g, ' ').trim();
 
+export const simln = (
+  name: string,
+  container: string,
+  image: string,
+  command: string,
+  environment: Record<string, string>,
+): ComposeService => ({
+  image,
+  container_name: container,
+  hostname: name,
+  command: trimInside(command),
+  environment,
+  restart: 'always',
+  volumes: [
+    `./volumes/${name}:/home/simln/.simln`,
+    `./volumes/${dockerConfigs.LND.volumeDirName}:/home/simln/.lnd`,
+    `./volumes/${dockerConfigs['c-lightning'].volumeDirName}:/home/simln/.clightning`,
+  ],
+  expose: [],
+  ports: [],
+});
+
 export const bitcoind = (
   name: string,
   container: string,

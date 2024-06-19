@@ -401,6 +401,7 @@ export const createNetwork = (config: {
       tap: [],
     },
     autoMineMode: AutoMineMode.AutoOff,
+    simulationActivities: [],
   };
 
   const { bitcoin, lightning } = network.nodes;

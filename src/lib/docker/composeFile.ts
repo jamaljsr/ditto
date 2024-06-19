@@ -8,7 +8,7 @@ import {
 } from 'shared/types';
 import { bitcoinCredentials, dockerConfigs, eclairCredentials } from 'utils/constants';
 import { getContainerName } from 'utils/network';
-import { bitcoind, clightning, eclair, lnd, tapd } from './nodeTemplates';
+import { bitcoind, clightning, eclair, lnd, simln, tapd } from './nodeTemplates';
 
 export interface ComposeService {
   image: string;
@@ -47,10 +47,22 @@ class ComposeFile {
       environment: {
         USERID: '${USERID:-1000}',
         GROUPID: '${GROUPID:-1000}',
+        ...service.environment,
       },
       stop_grace_period: '2m',
       ...service,
     };
+  }
+
+  addSimLn(networkId: number) {
+    const svc: ComposeService = simln(
+      dockerConfigs['simln'].name,
+      `polar-n${networkId}-simln`,
+      dockerConfigs['simln'].imageName,
+      dockerConfigs['simln'].command,
+      { ...dockerConfigs['simln'].env },
+    );
+    this.addService(svc);
   }
 
   addBitcoind(node: BitcoinNode) {

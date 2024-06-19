@@ -24,6 +24,13 @@ import { migrateNetworksFile } from 'utils/migrations';
 import { isLinux, isMac } from 'utils/system';
 import ComposeFile from './composeFile';
 
+type SimulationActivity = {
+  source: string;
+  destination: string;
+  interval_secs: number;
+  amount_msat: number;
+};
+
 let dockerInst: Dockerode | undefined;
 /**
  * Creates a new Dockerode instance by detecting the docker socket
@@ -124,6 +131,7 @@ class DockerService implements DockerLibrary {
   async saveComposeFile(network: Network) {
     const file = new ComposeFile(network.id);
     const { bitcoin, lightning, tap } = network.nodes;
+    const simulationActivityExists = network.simulationActivities.length > 0;
 
     bitcoin.forEach(node => file.addBitcoind(node));
     lightning.forEach(node => {
@@ -152,11 +160,100 @@ class DockerService implements DockerLibrary {
         file.addTapd(tapd, lndBackend as LndNode);
       }
     });
+    if (simulationActivityExists) {
+      file.addSimLn(network.id);
+    }
 
     const yml = yaml.dump(file.content);
     const path = join(network.path, 'docker-compose.yml');
     await write(path, yml);
     info(`saved compose file for '${network.name}' at '${path}'`);
+  }
+
+  /**
+   * Constructs the contents of sim.json file for the simulation activity
+   * @param network the network to start
+   */
+  async constructSimJson(network: Network) {
+    const nodes = new Set();
+    const activities = new Set();
+    network.simulationActivities.map(activity => {
+      const { source, destination } = activity;
+      // split the macaroon and cert path at "volumes/" to get the relative path
+      // to the docker volume. This is necessary because the docker volumes are
+      // mounted as a different path in the container
+      const sourceMacaroon = source.macaroon.split('volumes/').pop();
+      const sourceCert = source?.tlsCert
+        ? source.tlsCert?.split('volumes/').pop()
+        : source?.clientKey?.split('volumes/').pop();
+      const destMacaroon = destination.macaroon.split('volumes/').pop();
+      const destCert = destination.tlsCert
+        ? destination.tlsCert?.split('volumes/').pop()
+        : destination?.clientKey?.split('volumes/').pop();
+      info({ sourceMacaroon, sourceCert, destMacaroon, destCert });
+      nodes.add({
+        id: activity.source.id,
+        address: activity.source.address,
+        macaroon: `/home/simln/.${sourceMacaroon}`,
+        cert: `/home/simln/.${sourceCert}`,
+      });
+      nodes.add({
+        id: activity.destination.id,
+        address: activity.destination.address,
+        macaroon: `/home/simln/.${destMacaroon}`,
+        cert: `/home/simln/.${destCert}`,
+      });
+
+      activities.add({
+        source: activity.source.id,
+        destination: activity.destination.id,
+        interval_secs: activity.intervalSecs,
+        amount_msat: activity.amountMsat,
+      });
+    });
+    return {
+      nodes: Array.from(nodes),
+      activity: Array.from(activities) as SimulationActivity[],
+    };
+  }
+
+  /**
+   * Start a simulation activity in the network using docker compose
+   * @param network the network containing the simulation activity
+   */
+  async startSimulationActivity(network: Network) {
+    const simJson = await this.constructSimJson(network);
+    info(
+      `simJson:  ${simJson} simJson.nodes: ${simJson.nodes} simJson.activities: ${simJson.activity}`,
+    );
+    await this.ensureDirs(network, [
+      ...network.nodes.bitcoin,
+      ...network.nodes.lightning,
+      ...network.nodes.tap,
+    ]);
+    const simjsonPath = nodePath(network, 'simln', 'sim.json');
+    await write(simjsonPath, JSON.stringify(simJson));
+    const result = await this.execute(compose.upOne, 'simln', this.getArgs(network));
+    info(`Simulation activity started:\n ${result.out || result.err}`);
+  }
+
+  /**
+   * Stop a simulation activity in the network using docker compose
+   * @param network the network containing the simulation activity
+   */
+  async stopSimulationActivity(network: Network) {
+    info(`Stopping simulation activity for ${network.name}`);
+    info(` - path: ${network.path}`);
+    const result = await this.execute(compose.stopOne, 'simln', this.getArgs(network));
+    info(`Simulation activity stopped:\n ${result.out || result.err}`);
+
+    // remove container to avoid conflicts when starting the network again
+    const removedContainer = await this.execute(
+      compose.rm as any,
+      this.getArgs(network),
+      'simln',
+    );
+    info(`Removed simln container ${removedContainer.out || removedContainer.err}`);
   }
 
   /**
@@ -169,8 +266,19 @@ class DockerService implements DockerLibrary {
 
     info(`Starting docker containers for ${network.name}`);
     info(` - path: ${network.path}`);
-    const result = await this.execute(compose.upAll, this.getArgs(network));
-    info(`Network started:\n ${result.out || result.err}`);
+
+    // we don't want to start the simln service when starting the network
+    // because it depends on the running lightning nodes and the simulation
+    // activity should be started separately based on user preference
+    const servicesToStart = this.getServicesToStart(
+      [...bitcoin, ...lightning, ...tap],
+      ['simln'],
+    );
+
+    for (const service of servicesToStart) {
+      const result = await this.execute(compose.upOne, service, this.getArgs(network));
+      info(`Network started: ${service}\n ${result.out || result.err}`);
+    }
   }
 
   /**
@@ -281,6 +389,24 @@ class DockerService implements DockerLibrary {
     } catch (error: any) {
       info(`failed to copy folder\nfrom: ${legacyPath}\nto: ${networksPath}\n`, error);
     }
+  }
+
+  /**
+   * Filter out services based on exclude list and return a list of service names to start
+   * @param nodes Array of all nodes
+   * @param exclude Array of container names to exclude
+   */
+  private getServicesToStart(
+    nodes:
+      | CommonNode[]
+      | {
+          name: 'simln';
+        }[],
+    exclude: string[],
+  ): string[] {
+    return nodes
+      .map(node => node.name)
+      .filter(serviceName => !exclude.includes(serviceName));
   }
 
   /**

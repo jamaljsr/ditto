@@ -83,7 +83,7 @@ export const eclairCredentials = {
   pass: 'eclairpw',
 };
 
-export const dockerConfigs: Record<NodeImplementation, DockerConfig> = {
+export const dockerConfigs: Record<NodeImplementation | 'simln', DockerConfig> = {
   LND: {
     name: 'LND',
     imageName: 'polarlightning/lnd',
@@ -240,6 +240,20 @@ export const dockerConfigs: Record<NodeImplementation, DockerConfig> = {
     ].join('\n  '),
     // if vars are modified, also update composeFile.ts & the i18n strings for cmps.nodes.CommandVariables
     variables: ['name', 'containerName', 'lndName'],
+  },
+  simln: {
+    name: 'simln',
+    imageName: 'bitcoindevproject/simln:0.2.0',
+    logo: '',
+    platforms: ['mac', 'linux', 'windows'],
+    volumeDirName: 'simln',
+    env: {
+      SIMFILE_PATH: '/home/simln/.simln/sim.json',
+      DATA_DIR: '/home/simln/.simln',
+      LOG_LEVEL: 'info',
+    },
+    command: '',
+    variables: ['DEFAULT_SIMFILE_PATH', 'LOG_LEVEL', 'DATA_DIR'],
   },
 };
 
