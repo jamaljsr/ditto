@@ -18,6 +18,7 @@ import {
   TapNode,
 } from 'shared/types';
 import { createIpcSender } from 'lib/ipc/ipcService';
+import { LightningNodeChannel } from 'lib/lightning/types';
 import {
   AutoMineMode,
   CustomImage,
@@ -57,6 +58,19 @@ const groupNodes = (network: Network) => {
     eclair: lightning.filter(n => n.implementation === 'eclair') as EclairNode[],
     tapd: tap.filter(n => n.implementation === 'tapd') as TapdNode[],
   };
+};
+
+export const getInvoicePayload = (
+  channel: LightningNodeChannel,
+  localNode: LightningNode,
+  remoteNode: LightningNode,
+  nextLocalBalance: number,
+) => {
+  const localBalance = Number(channel.localBalance);
+  const amount = Math.abs(localBalance - nextLocalBalance);
+  const source = localBalance > nextLocalBalance ? localNode : remoteNode;
+  const target = localBalance > nextLocalBalance ? remoteNode : localNode;
+  return { source, target, amount };
 };
 
 export const getImageCommand = (

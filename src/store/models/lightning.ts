@@ -2,11 +2,13 @@ import { Action, action, Thunk, thunk, ThunkOn, thunkOn } from 'easy-peasy';
 import { throttle } from 'lodash';
 import { LightningNode, Status } from 'shared/types';
 import * as PLN from 'lib/lightning/types';
-import { Network, StoreInjections } from 'types';
+import { ChannelInfo, Network, PreInvoice, StoreInjections } from 'types';
 import { delay } from 'utils/async';
 import { BLOCKS_TIL_CONFIRMED } from 'utils/constants';
+import { getInvoicePayload } from 'utils/network';
 import { fromSatsNumeric } from 'utils/units';
 import { RootModel } from './';
+import { LightningNodeChannel } from 'lib/lightning/types';
 
 export interface LightningNodeMapping {
   [key: string]: LightningNodeModel;
@@ -45,6 +47,7 @@ export interface PayInvoicePayload {
 
 export interface LightningModel {
   nodes: LightningNodeMapping;
+  channelsInfo: ChannelInfo[];
   removeNode: Action<LightningModel, string>;
   clearNodes: Action<LightningModel, void>;
   setInfo: Action<LightningModel, { node: LightningNode; info: PLN.LightningNodeInfo }>;
@@ -88,11 +91,23 @@ export interface LightningModel {
   addListeners: Thunk<LightningModel, Network, StoreInjections, RootModel>;
   removeListeners: Thunk<LightningModel, Network, StoreInjections, RootModel>;
   addChannelListeners: Thunk<LightningModel, Network, StoreInjections, RootModel>;
+  setChannelsInfo: Action<LightningModel, ChannelInfo[]>;
+  resetChannelsInfo: Thunk<LightningModel, Network, StoreInjections, RootModel>;
+  manualBalanceChannelsInfo: Action<LightningModel, { value: number; index: number }>;
+  autoBalanceChannelsInfo: Action<LightningModel>;
+  updateBalanceOfChannels: Thunk<LightningModel, Network, StoreInjections, RootModel>;
+  balanceChannels: Thunk<
+    LightningModel,
+    { id: number; toPay: PreInvoice[] },
+    StoreInjections,
+    RootModel
+  >;
 }
 
 const lightningModel: LightningModel = {
   // state properties
   nodes: {},
+  channelsInfo: [],
   // reducer actions (mutations allowed thx to immer)
   removeNode: action((state, name) => {
     if (state.nodes[name]) {
@@ -129,6 +144,7 @@ const lightningModel: LightningModel = {
     const api = injections.lightningFactory.getService(node);
     const channels = await api.getChannels(node);
     actions.setChannels({ node, channels });
+    return channels;
   }),
   getAllInfo: thunk(async (actions, node) => {
     await actions.getInfo(node);
@@ -213,6 +229,8 @@ const lightningModel: LightningModel = {
       await actions.waitForNodes([from, to]);
       // synchronize the chart with the new channel
       await getStoreActions().designer.syncChart(network);
+      // synchronize channels info
+      await actions.resetChannelsInfo(network);
     },
   ),
   closeChannel: thunk(
@@ -236,6 +254,8 @@ const lightningModel: LightningModel = {
       await actions.waitForNodes([node]);
       // synchronize the chart with the new channel
       await getStoreActions().designer.syncChart(network);
+      // synchronize channels info
+      await actions.resetChannelsInfo(network);
     },
   ),
   createInvoice: thunk(async (actions, { node, amount, memo }, { injections }) => {
@@ -334,6 +354,125 @@ const lightningModel: LightningModel = {
       }
     },
   ),
+  setChannelsInfo: action((state, payload) => {
+    state.channelsInfo = payload;
+  }),
+  resetChannelsInfo: thunk(async (actions, network, { getStoreState }) => {
+    const channels = [] as LightningNodeChannel[];
+    const { getChannels } = actions;
+    const { links } = getStoreState().designer.activeChart;
+
+    const id2Node = {} as Record<string, LightningNode>;
+    const channelsInfo = [] as ChannelInfo[];
+
+    await Promise.all(
+      network.nodes.lightning.map(async node => {
+        const nodeChannels = await getChannels(node);
+        channels.push(...nodeChannels);
+        id2Node[node.name] = node;
+      }),
+    );
+
+    for (const channel of channels) {
+      const { uniqueId: id, localBalance, remoteBalance } = channel;
+      if (!links[id]) continue;
+      const from = links[id].from.nodeId;
+      const to = links[id].to.nodeId;
+      if (!to) continue;
+      const nextLocalBalance = Number(localBalance);
+      channelsInfo.push({
+        id,
+        to,
+        from,
+        localBalance,
+        remoteBalance,
+        nextLocalBalance,
+      });
+    }
+
+    actions.setChannelsInfo(channelsInfo);
+  }),
+  manualBalanceChannelsInfo: action((state, { value, index }) => {
+    const { channelsInfo: info } = state;
+    if (info && info[index]) {
+      info[index].nextLocalBalance = value;
+      state.channelsInfo = info;
+    }
+  }),
+  autoBalanceChannelsInfo: action(state => {
+    const { channelsInfo } = state;
+    if (!channelsInfo) {
+      return;
+    }
+    for (let index = 0; index < channelsInfo.length; index += 1) {
+      const { localBalance, remoteBalance } = channelsInfo[index];
+      const halfAmount = Math.floor((Number(localBalance) + Number(remoteBalance)) / 2);
+      channelsInfo[index].nextLocalBalance = halfAmount;
+    }
+    state.channelsInfo = channelsInfo;
+  }),
+  updateBalanceOfChannels: thunk(
+    async (actions, network, { getStoreActions, getState }) => {
+      const { notify } = getStoreActions().app;
+      const { hideBalanceChannels } = getStoreActions().modals;
+      const { channelsInfo } = getState();
+
+      if (!channelsInfo) return;
+
+      const toPay: PreInvoice[] = channelsInfo
+        .filter(c => Number(c.localBalance) !== c.nextLocalBalance)
+        .map(c => ({ channelId: c.id, nextLocalBalance: c.nextLocalBalance }));
+
+      await actions.balanceChannels({ id: network.id, toPay });
+      await hideBalanceChannels();
+      notify({ message: 'Channels balanced!' });
+    },
+  ),
+  balanceChannels: thunk(async (actions, { id, toPay }, { getStoreState }) => {
+    const { networks } = getStoreState().network;
+    const network = networks.find(n => n.id === id);
+    if (!network) throw new Error('networkByIdErr');
+    const { createInvoice, payInvoice, getChannels } = actions;
+    const lnNodes = network.nodes.lightning;
+    const channels = [] as LightningNodeChannel[];
+    const id2Node = {} as Record<string, LightningNode>;
+    const id2channel = {} as Record<string, LightningNodeChannel>;
+
+    await Promise.all(
+      lnNodes.map(async node => {
+        id2Node[node.name] = node;
+        const nodeChannels = await getChannels(node);
+        channels.push(...nodeChannels);
+      }),
+    );
+
+    channels.forEach(channel => (id2channel[channel.uniqueId] = channel));
+    const minimumSatsDifference = 50;
+    const links = getStoreState().designer.activeChart.links;
+
+    await Promise.all(
+      toPay.map(async ({ channelId, nextLocalBalance }) => {
+        const channel = id2channel[channelId];
+        const { to, from } = links[channelId];
+        if (!to.nodeId) return;
+        const fromNode = id2Node[from.nodeId];
+        const toNode = id2Node[to.nodeId];
+        const payload = getInvoicePayload(channel, fromNode, toNode, nextLocalBalance);
+
+        if (payload.amount < minimumSatsDifference) return;
+
+        const invoice = await createInvoice({
+          node: payload.target,
+          amount: payload.amount,
+        });
+
+        await payInvoice({
+          invoice,
+          node: payload.source,
+        });
+      }),
+    );
+  }),
 };
 
 export default lightningModel;

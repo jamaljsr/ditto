@@ -35,6 +35,10 @@ interface AdvancedOptionsModel {
   defaultCommand?: string;
 }
 
+interface BalanceChannelsModel {
+  visible: boolean;
+}
+
 interface ImageUpdatesModel {
   visible: boolean;
 }
@@ -80,6 +84,7 @@ export interface ModalsModel {
   createInvoice: CreateInvoiceModel;
   payInvoice: PayInvoiceModel;
   advancedOptions: AdvancedOptionsModel;
+  balanceChannels: BalanceChannelsModel;
   imageUpdates: ImageUpdatesModel;
   sendOnChain: SendOnChainModel;
   assetInfo: AssetInfoModel;
@@ -102,6 +107,9 @@ export interface ModalsModel {
   setAdvancedOptions: Action<ModalsModel, AdvancedOptionsModel>;
   showAdvancedOptions: Thunk<ModalsModel, Partial<AdvancedOptionsModel>, StoreInjections>;
   hideAdvancedOptions: Thunk<ModalsModel, void, StoreInjections, RootModel>;
+  hideBalanceChannels: Thunk<ModalsModel, void, StoreInjections, RootModel>;
+  showBalanceChannels: Thunk<ModalsModel, void, StoreInjections>;
+  setBalanceChannels: Action<ModalsModel, BalanceChannelsModel>;
   setImageUpdates: Action<ModalsModel, ImageUpdatesModel>;
   showImageUpdates: Thunk<ModalsModel, void, StoreInjections>;
   hideImageUpdates: Thunk<ModalsModel, void, StoreInjections, RootModel>;
@@ -138,6 +146,7 @@ const modalsModel: ModalsModel = {
   createInvoice: { visible: false },
   payInvoice: { visible: false },
   advancedOptions: { visible: false },
+  balanceChannels: { visible: false },
   imageUpdates: { visible: false },
   sendOnChain: { visible: false },
   assetInfo: { visible: false },
@@ -235,6 +244,19 @@ const modalsModel: ModalsModel = {
       defaultCommand: undefined,
     });
   }),
+  setBalanceChannels: action((state, payload) => {
+    state.balanceChannels = {
+      ...state.balanceChannels,
+      ...payload,
+    };
+  }),
+  showBalanceChannels: thunk(actions => {
+    actions.setBalanceChannels({ visible: true });
+  }),
+  hideBalanceChannels: thunk(actions => {
+    actions.setBalanceChannels({ visible: false });
+  }),
+
   setImageUpdates: action((state, payload) => {
     state.imageUpdates = {
       ...state.imageUpdates,

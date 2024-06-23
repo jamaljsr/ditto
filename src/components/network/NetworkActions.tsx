@@ -1,3 +1,4 @@
+import React, { ReactNode, useCallback } from 'react';
 import {
   CloseOutlined,
   ExportOutlined,
@@ -11,15 +12,15 @@ import {
 import styled from '@emotion/styled';
 import { Button, Divider, Dropdown, MenuProps, Tag } from 'antd';
 import { ButtonType } from 'antd/lib/button';
-import AutoMineButton from 'components/designer/AutoMineButton';
-import { useMiningAsync } from 'hooks/useMiningAsync';
-import SyncButton from 'components/designer/SyncButton';
 import { usePrefixedTranslation } from 'hooks';
-import React, { ReactNode, useCallback } from 'react';
+import { useMiningAsync } from 'hooks/useMiningAsync';
 import { Status } from 'shared/types';
 import { useStoreState } from 'store';
 import { Network } from 'types';
 import { getNetworkBackendId } from 'utils/network';
+import BalanceChannelsButton from 'components/common/BalanceChannelsButton';
+import AutoMineButton from 'components/designer/AutoMineButton';
+import SyncButton from 'components/designer/SyncButton';
 
 const Styled = {
   Button: styled(Button)`
@@ -129,6 +130,7 @@ const NetworkActions: React.FC<Props> = ({
             {l('mineBtn')}
           </Button>
           <AutoMineButton network={network} />
+          <BalanceChannelsButton network={network} />
           <SyncButton network={network} />
           <Divider type="vertical" />
         </>
