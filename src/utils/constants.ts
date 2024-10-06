@@ -187,6 +187,8 @@ export const dockerConfigs: Record<NodeImplementation, DockerConfig> = {
       '--printToConsole=true',
       '--on-chain-fees.feerate-tolerance.ratio-low=0.00001',
       '--on-chain-fees.feerate-tolerance.ratio-high=10000.0',
+      '--channel.max-htlc-value-in-flight-percent=100',
+      '--channel.max-htlc-value-in-flight-msat=5000000000000', // 50 BTC since 1000 msats = 1 sat = 1/10^7 btc
     ].join('\n  '),
     // if vars are modified, also update composeFile.ts & the i18n strings for cmps.nodes.CommandVariables
     variables: ['name', 'eclairPass', 'backendName', 'rpcUser', 'rpcPass'],

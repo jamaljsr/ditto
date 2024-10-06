@@ -281,3 +281,17 @@ export enum AutoMineMode {
   Auto5m = 300,
   Auto10m = 600,
 }
+
+export interface ChannelInfo {
+  id: string;
+  to: string;
+  from: string;
+  localBalance: string;
+  remoteBalance: string;
+  nextLocalBalance: number;
+}
+
+export interface PreInvoice {
+  channelId: string;
+  nextLocalBalance: number;
+}

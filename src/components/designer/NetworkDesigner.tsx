@@ -9,6 +9,7 @@ import { useStoreActions, useStoreState } from 'store';
 import { Network } from 'types';
 import { Loader, RenameNodeModal } from 'components/common';
 import AdvancedOptionsModal from 'components/common/AdvancedOptionsModal';
+import BalanceChannelsModal from 'components/common/BalanceChannelsModal';
 import SendOnChainModal from './bitcoind/actions/SendOnChainModal';
 import { Link, NodeInner, Port, Ports } from './custom';
 import { CanvasOuterDark, CanvasOuterLight } from './custom/CanvasOuter';
@@ -62,6 +63,7 @@ const NetworkDesigner: React.FC<Props> = ({ network, updateStateDelay = 3000 }) 
     changeBackend,
     sendOnChain,
     advancedOptions,
+    balanceChannels,
     changeTapBackend,
     renameNode,
     addLncSession,
@@ -108,6 +110,7 @@ const NetworkDesigner: React.FC<Props> = ({ network, updateStateDelay = 3000 }) 
       {changeBackend.visible && <ChangeBackendModal network={network} />}
       {sendOnChain.visible && <SendOnChainModal network={network} />}
       {advancedOptions.visible && <AdvancedOptionsModal network={network} />}
+      {balanceChannels.visible && <BalanceChannelsModal network={network} />}
       {mintAsset.visible && <MintAssetModal network={network} />}
       {newAddress.visible && <NewAddressModal network={network} />}
       {changeTapBackend.visible && <ChangeTapBackendModal network={network} />}

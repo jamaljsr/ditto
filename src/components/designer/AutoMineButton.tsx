@@ -1,9 +1,9 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FieldTimeOutlined } from '@ant-design/icons';
 import styled from '@emotion/styled';
-import { Button, Dropdown, Tooltip, MenuProps } from 'antd';
+import { Button, Dropdown, MenuProps, Tooltip } from 'antd';
 import { ItemType } from 'antd/lib/menu/hooks/useItems';
 import { usePrefixedTranslation } from 'hooks';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useStoreActions, useStoreState } from 'store';
 import { AutoMineMode, Network } from 'types';
 
