@@ -1,10 +1,15 @@
 import React from 'react';
 import { usePrefixedTranslation } from 'hooks';
+import { Network } from 'types';
 import SidebarCard from '../SidebarCard';
 import NetworkDesignerCard from './cards/NetworkDesignerCard';
 import ActivityDesignerCard from './cards/ActivityDesignerCard';
 
-const DefaultSidebar: React.FC = () => {
+interface Props {
+  network: Network;
+}
+
+const DefaultSidebar: React.FC<Props> = ({ network }) => {
   const [designerType, setDesignerType] = React.useState('network');
   const { l } = usePrefixedTranslation('cmps.designer.default.DefaultSidebar');
 
@@ -15,7 +20,9 @@ const DefaultSidebar: React.FC = () => {
 
   const tabContents: Record<string, React.ReactNode> = {
     network: <NetworkDesignerCard />,
-    activity: <ActivityDesignerCard />,
+    activity: (
+      <ActivityDesignerCard visible={designerType === 'activity'} network={network} />
+    ),
   };
 
   return (
