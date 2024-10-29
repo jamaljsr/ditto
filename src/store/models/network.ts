@@ -14,7 +14,13 @@ import {
   TapdNode,
   TapNode,
 } from 'shared/types';
-import { AutoMineMode, CustomImage, Network, StoreInjections } from 'types';
+import {
+  AutoMineMode,
+  CustomImage,
+  Network,
+  SimulationActivity,
+  StoreInjections,
+} from 'types';
 import { delay } from 'utils/async';
 import { initChartFromNetwork } from 'utils/chart';
 import { APP_VERSION, DOCKER_REPO } from 'utils/constants';
@@ -192,6 +198,34 @@ export interface NetworkModel {
   setAutoMineMode: Action<NetworkModel, { id: number; mode: AutoMineMode }>;
   setMiningState: Action<NetworkModel, { id: number; mining: boolean }>;
   mineBlock: Thunk<NetworkModel, { id: number }, StoreInjections, RootModel>;
+  startSimulation: Thunk<
+    NetworkModel,
+    { id: number },
+    StoreInjections,
+    RootModel,
+    Promise<void>
+  >;
+  stopSimulation: Thunk<
+    NetworkModel,
+    { id: number },
+    StoreInjections,
+    RootModel,
+    Promise<void>
+  >;
+  addSimulationActivity: Thunk<
+    NetworkModel,
+    SimulationActivity,
+    StoreInjections,
+    RootModel,
+    Promise<void>
+  >;
+  removeSimulationActivity: Thunk<
+    NetworkModel,
+    SimulationActivity,
+    StoreInjections,
+    RootModel,
+    Promise<void>
+  >;
 }
 
 const networkModel: NetworkModel = {
@@ -253,7 +287,11 @@ const networkModel: NetworkModel = {
   }),
   add: action((state, network) => {
     state.networks.push(network);
-    info(`Added new network '${network.name}' to redux state`);
+    info(
+      `Added new network '${network.name}' to redux state ${JSON.stringify(
+        state.networks,
+      )}`,
+    );
   }),
   addNetwork: thunk(
     async (
@@ -1070,6 +1108,97 @@ const networkModel: NetworkModel = {
       if (wasStarted) {
         // do not await this so the modal will close while the network is starting
         actions.start(node.networkId);
+      }
+    },
+  ),
+  addSimulationActivity: thunk(async (actions, activity, { getState, injections }) => {
+    const networks = getState().networks;
+    const network = networks.find(n => n.id === activity.networkId);
+    if (!network) throw new Error(l('networkByIdErr', { networkId: activity.networkId }));
+
+    // TODO: update to getChannelsBetweenNodes method for each ln nodes, this should return an array of exisiting channels
+    const channels = [1];
+
+    if (channels.length === 0) {
+      throw new Error(
+        'no channel exist between nodes, you should create a channel to simulate activities',
+      );
+    }
+
+    // add the activity to the network
+    network.simulationActivities.push(activity);
+
+    actions.setNetworks([...networks]);
+    await actions.save();
+    await injections.dockerService.saveComposeFile(network);
+    info(`Added new activity '${JSON.stringify(activity)}' to redux state `);
+  }),
+  removeSimulationActivity: thunk(async (actions, activity, { getState, injections }) => {
+    const networks = getState().networks;
+    const network = networks.find(n => n.id === activity.networkId);
+    if (!network) throw new Error(l('networkByIdErr', { networkId: activity.networkId }));
+
+    // remove the activity from the network
+    network.simulationActivities = network.simulationActivities.filter(
+      a => a !== activity,
+    );
+
+    actions.setNetworks([...networks]);
+    await actions.save();
+    await injections.dockerService.saveComposeFile(network);
+    info(
+      `Removed activity '${JSON.stringify(
+        activity,
+      )}' from redux state \n ${JSON.stringify(network.simulationActivities)}`,
+    );
+  }),
+  startSimulation: thunk(
+    async (actions, { id }, { getState, injections, getStoreActions }) => {
+      const network = getState().networks.find(n => n.id === id);
+      if (!network) throw new Error(l('networkByIdErr', { networkId: id }));
+      await actions.save();
+      await injections.dockerService.saveComposeFile(network);
+      info(
+        `Simulation started for network '${JSON.stringify(
+          network.simulationActivities,
+        )}'`,
+      );
+      try {
+        const lightningNodes = network.nodes.lightning;
+        network.simulationActivities.forEach(activity => {
+          lightningNodes.forEach(node => {
+            if (node.name === activity.source.name && node.status !== Status.Started) {
+              throw new Error(l('nodeNotStarted', { name: activity.source.name }));
+            }
+            if (
+              node.name === activity.destination.name &&
+              node.status !== Status.Started
+            ) {
+              throw new Error(l('nodeNotStarted', { name: activity.destination.name }));
+            }
+          });
+        });
+        await injections.dockerService.saveComposeFile(network);
+        await injections.dockerService.startSimulationActivity(network);
+        info(`Simulation started for network '${network.name}'`);
+        await getStoreActions().app.getDockerImages();
+      } catch (e: any) {
+        info(`unable to start simulation for network '${network.name}'`, e.message);
+        throw e;
+      }
+    },
+  ),
+  stopSimulation: thunk(
+    async (actions, { id }, { getState, injections, getStoreActions }) => {
+      const network = getState().networks.find(n => n.id === id);
+      if (!network) throw new Error(l('networkByIdErr', { networkId: id }));
+      try {
+        await injections.dockerService.stopSimulationActivity(network);
+        info(`Simulation stopped for network '${network.name}'`);
+        await getStoreActions().app.getDockerImages();
+      } catch (e: any) {
+        info(`unable to stop simulation for network '${network.name}'`, e.message);
+        throw e;
       }
     },
   ),

@@ -60,6 +60,8 @@ export const injections: StoreInjections = {
     saveNetworks: jest.fn(),
     loadNetworks: jest.fn(),
     renameNodeDir: jest.fn(),
+    startSimulationActivity: jest.fn(),
+    stopSimulationActivity: jest.fn(),
   },
   repoService: {
     load: jest.fn(),
