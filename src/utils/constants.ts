@@ -97,7 +97,7 @@ export const litdCredentials = {
   pass: 'polarpass',
 };
 
-export const dockerConfigs: Record<NodeImplementation, DockerConfig> = {
+export const dockerConfigs: Record<NodeImplementation | 'simln', DockerConfig> = {
   LND: {
     name: 'LND',
     imageName: 'polarlightning/lnd',
@@ -125,6 +125,8 @@ export const dockerConfigs: Record<NodeImplementation, DockerConfig> = {
       '--bitcoind.rpcpass={{rpcPass}}',
       '--bitcoind.zmqpubrawblock=tcp://{{backendName}}:28334',
       '--bitcoind.zmqpubrawtx=tcp://{{backendName}}:28335',
+      '--accept-keysend',
+      '--accept-amp',
     ].join('\n  '),
     // if vars are modified, also update composeFile.ts & the i18n strings for cmps.nodes.CommandVariables
     variables: ['name', 'containerName', 'backendName', 'rpcUser', 'rpcPass'],
@@ -317,6 +319,20 @@ export const dockerConfigs: Record<NodeImplementation, DockerConfig> = {
     ].join('\n  '),
     // if vars are modified, also update composeFile.ts & the i18n strings for cmps.nodes.CommandVariables
     variables: ['name', 'containerName', 'backendName', 'rpcUser', 'rpcPass'],
+  },
+  simln: {
+    name: 'simln',
+    imageName: 'bitcoindevproject/simln:0.2.0',
+    logo: '',
+    platforms: ['mac', 'linux', 'windows'],
+    volumeDirName: 'simln',
+    env: {
+      SIMFILE_PATH: '/home/simln/.simln/sim.json',
+      DATA_DIR: '/home/simln/.simln',
+      LOG_LEVEL: 'info',
+    },
+    command: '',
+    variables: ['DEFAULT_SIMFILE_PATH', 'LOG_LEVEL', 'DATA_DIR'],
   },
 };
 

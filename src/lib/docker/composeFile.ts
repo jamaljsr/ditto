@@ -14,7 +14,7 @@ import {
   litdCredentials,
 } from 'utils/constants';
 import { getContainerName, getDefaultCommand } from 'utils/network';
-import { bitcoind, clightning, eclair, litd, lnd, tapd } from './nodeTemplates';
+import { bitcoind, clightning, eclair, litd, lnd, simln, tapd } from './nodeTemplates';
 
 export interface ComposeService {
   image: string;
@@ -51,6 +51,7 @@ class ComposeFile {
       environment: {
         USERID: '${USERID:-1000}',
         GROUPID: '${GROUPID:-1000}',
+        ...service.environment,
       },
       stop_grace_period: '30s',
       ...service,
@@ -190,6 +191,17 @@ class ComposeFile {
     const command = this.mergeCommand(nodeCommand, variables);
     // add the docker service
     const svc = tapd(name, container, image, rest, grpc, lndBackend.name, command);
+    this.addService(svc);
+  }
+
+  addSimLn(networkId: number) {
+    const svc: ComposeService = simln(
+      dockerConfigs['simln'].name,
+      `polar-n${networkId}-simln`,
+      dockerConfigs['simln'].imageName,
+      dockerConfigs['simln'].command,
+      { ...dockerConfigs['simln'].env },
+    );
     this.addService(svc);
   }
 
