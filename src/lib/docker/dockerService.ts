@@ -26,6 +26,23 @@ import { migrateNetworksFile } from 'utils/migrations';
 import { isLinux, isMac } from 'utils/system';
 import ComposeFile from './composeFile';
 
+type SimulationNode = {
+  id: string;
+  address: string;
+  macaroon?: string;
+  cert?: string;
+  ca_cert?: string;
+  client_cert?: string;
+  client_key?: string;
+};
+
+type SimulationActivity = {
+  source: string;
+  destination: string;
+  interval_secs: number;
+  amount_msat: number;
+};
+
 let dockerInst: Dockerode | undefined;
 /**
  * Creates a new Dockerode instance by detecting the docker socket
@@ -160,6 +177,10 @@ class DockerService implements DockerLibrary {
       }
     });
 
+    if (network.simulationActivities.length > 0) {
+      file.addSimLn(network.id);
+    }
+
     const yml = yaml.dump(file.content);
     const path = join(network.path, 'docker-compose.yml');
     await write(path, yml);
@@ -176,8 +197,37 @@ class DockerService implements DockerLibrary {
 
     info(`Starting docker containers for ${network.name}`);
     info(` - path: ${network.path}`);
-    const result = await this.execute(compose.upAll, this.getArgs(network));
-    info(`Network started:\n ${result.out || result.err}`);
+
+    // we don't want to start the simln service when starting the network
+    // because it depends on the running lightning nodes and the simulation
+    // activity should be started separately based on user preference
+    const servicesToStart = this.getServicesToStart(
+      [...bitcoin, ...lightning, ...tap],
+      ['simln'],
+    );
+
+    for (const service of servicesToStart) {
+      const result = await this.execute(compose.upOne, service, this.getArgs(network));
+      info(`Network started: ${service}\n ${result.out || result.err}`);
+    }
+  }
+
+  /**
+   * Filter out services based on exclude list and return a list of service names to start
+   * @param nodes Array of all nodes
+   * @param exclude Array of container names to exclude
+   */
+  private getServicesToStart(
+    nodes:
+      | CommonNode[]
+      | {
+          name: 'simln';
+        }[],
+    exclude: string[],
+  ): string[] {
+    return nodes
+      .map(node => node.name)
+      .filter(serviceName => !exclude.includes(serviceName));
   }
 
   /**
@@ -315,6 +365,112 @@ class DockerService implements DockerLibrary {
     } catch (error: any) {
       info(`failed to copy folder\nfrom: ${legacyPath}\nto: ${networksPath}\n`, error);
     }
+  }
+
+  /**
+   * Constructs the contents of sim.json file for the simulation activity
+   * @param network the network to start
+   */
+  constructSimJson(network: Network) {
+    const simJson: {
+      nodes: SimulationNode[];
+      activity: SimulationActivity[];
+    } = {
+      nodes: [],
+      activity: [],
+    };
+
+    network.simulationActivities.forEach(activity => {
+      const { source, destination } = activity;
+      const nodeArray = [source, destination];
+
+      for (const node of nodeArray) {
+        let simNode: SimulationNode;
+
+        // split the macaroon and cert path at "volumes/" to get the relative path
+        // to the docker volume. This is necessary because the docker volumes are
+        // mounted as a different path in the container.
+        switch (node.implementation) {
+          case 'LND':
+            const lnd = node as LndNode;
+            simNode = {
+              id: lnd.name,
+              macaroon: `/home/simln/.${lnd.paths.adminMacaroon.split('volumes/').pop()}`,
+              address: `https://host.docker.internal:${lnd.ports.grpc}`,
+              cert: `/home/simln/.${lnd.paths.tlsCert.split('volumes/').pop()}`,
+            };
+            break;
+
+          case 'c-lightning':
+            const cln = node as CLightningNode;
+            simNode = {
+              id: cln.name,
+              address: `https://host.docker.internal:${cln.ports.grpc}`,
+              ca_cert: `/home/simln/.${cln.paths?.tlsCert?.split('volumes/').pop()}`,
+              client_cert: `/home/simln/.${cln.paths?.tlsClientCert
+                ?.split('volumes/')
+                .pop()}`,
+              client_key: `/home/simln/.${cln.paths?.tlsClientKey
+                ?.split('volumes/')
+                .pop()}`,
+            };
+            break;
+
+          default:
+            throw new Error(`unsupported node type ${node.implementation}`);
+        }
+
+        // console.log(`simNode >> \n ${JSON.stringify(simNode)}`);
+        // Add the node to the nodes Set (duplicates are automatically handled)
+        simJson.nodes.push(simNode);
+      }
+
+      // Add the activity
+      const simActivity: SimulationActivity = {
+        source: activity.source.name,
+        destination: activity.destination.name,
+        interval_secs: activity.intervalSecs,
+        amount_msat: activity.amountMsat * 1000,
+      };
+
+      // console.log(`simActivity >> \n ${JSON.stringify(simActivity)}`);
+      // Add the activity to the activity Set (duplicates are automatically handled)
+      simJson.activity.push(simActivity);
+    });
+    return {
+      nodes: [...new Map(simJson.nodes.map(node => [node['id'], node])).values()],
+      activity: [
+        ...new Map(
+          simJson.activity.map(activity => [
+            `${activity.source}-${activity.destination}`,
+            activity,
+          ]),
+        ).values(),
+      ],
+    };
+  }
+
+  /**
+   * Start a simulation activity in the network using docker compose
+   * @param network the network containing the simulation activity
+   */
+  async startSimulationActivity(network: Network) {
+    const simJson = this.constructSimJson(network);
+    // console.log(`simJson >> \n ${JSON.stringify(simJson)}`);
+    await this.ensureDirs(network, [
+      ...network.nodes.bitcoin,
+      ...network.nodes.lightning,
+      ...network.nodes.tap,
+    ]);
+    const simjsonPath = nodePath(network, 'simln', 'sim.json');
+    await write(simjsonPath, JSON.stringify(simJson));
+    console.log(`simjsonPath >> \n ${JSON.stringify(simjsonPath)}`);
+    const result = await this.execute(compose.upOne, 'simln', this.getArgs(network));
+    info(`Simulation activity started:\n ${result.out || result.err}`);
+  }
+
+  async stopSimulationActivity(network: Network) {
+    info(`[stopSimulationActivity] \n ${network}`);
   }
 
   /**

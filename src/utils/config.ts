@@ -32,7 +32,7 @@ export const networksPath = join(dataPath, 'networks');
  */
 export const nodePath = (
   network: Network,
-  implementation: NodeImplementation,
+  implementation: NodeImplementation | 'simln',
   name: string,
 ): string =>
   join(network.path, 'volumes', dockerConfigs[implementation].volumeDirName, name);

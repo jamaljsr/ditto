@@ -26,6 +26,7 @@ export interface Network {
   status: Status;
   path: string;
   autoMineMode: AutoMineMode;
+  simulationActivities: SimulationActivity[];
   nodes: {
     bitcoin: BitcoinNode[];
     lightning: LightningNode[];
@@ -100,6 +101,7 @@ export interface DockerConfig {
   variables: string[];
   dataDir?: string;
   apiDir?: string;
+  env?: Record<string, string>;
 }
 
 export interface DockerRepoImage {
@@ -136,6 +138,8 @@ export interface DockerLibrary {
   saveNetworks: (networks: NetworksFile) => Promise<void>;
   loadNetworks: () => Promise<NetworksFile>;
   renameNodeDir: (network: Network, node: AnyNode, newName: string) => Promise<void>;
+  startSimulationActivity: (network: Network) => Promise<void>;
+  stopSimulationActivity: (network: Network) => Promise<void>;
 }
 
 export interface RepoServiceInjection {
@@ -280,4 +284,36 @@ export enum AutoMineMode {
   Auto1m = 60,
   Auto5m = 300,
   Auto10m = 600,
+}
+
+/**
+ * A running lightning node that is used in the simulation activity
+ */
+export interface SimulationActivityNode {
+  id: string;
+  label: string;
+  type: LightningNode['implementation'];
+  address: string;
+  macaroon: string;
+  tlsCert: string;
+  clientCert?: string;
+  clientKey?: string;
+}
+
+/**
+ * A simulation activity is a payment from one node to another at a given interval and amount
+ */
+export interface SimulationActivity {
+  networkId: number;
+  source: LightningNode;
+  destination: LightningNode;
+  intervalSecs: number;
+  amountMsat: number;
+}
+
+export interface ActivityInfo {
+  sourceNode: LightningNode | undefined;
+  targetNode: LightningNode | undefined;
+  amount: number;
+  frequency: number;
 }

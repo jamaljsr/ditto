@@ -181,3 +181,25 @@ export const litd = (
     `${webPort}:8443`, // web
   ],
 });
+
+export const simln = (
+  name: string,
+  container: string,
+  image: string,
+  command: string,
+  environment: Record<string, string>,
+): ComposeService => ({
+  image,
+  container_name: container,
+  hostname: name,
+  command: trimInside(command),
+  environment,
+  restart: 'always',
+  volumes: [
+    `./volumes/${name}:/home/simln/.simln`,
+    `./volumes/${dockerConfigs.LND.volumeDirName}:/home/simln/.lnd`,
+    `./volumes/${dockerConfigs['c-lightning'].volumeDirName}:/home/simln/.clightning`,
+  ],
+  expose: [],
+  ports: [],
+});
