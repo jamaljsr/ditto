@@ -4,7 +4,7 @@ import { fireEvent, waitFor } from '@testing-library/react';
 import { Status } from 'shared/types';
 import { bitcoinCredentials, dockerConfigs } from 'utils/constants';
 import { getNetwork, injections, renderWithProviders } from 'utils/tests';
-import BitcoindDetails from './BitcoindDetails';
+import BitcoindDetails from './BitcoinDetails';
 
 describe('BitcoindDetails', () => {
   const renderComponent = (status?: Status, custom = false) => {

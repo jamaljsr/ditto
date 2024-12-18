@@ -11,7 +11,7 @@ import {
 } from 'components/common';
 import { ViewLogsButton } from 'components/dockerLogs';
 import { OpenTerminalButton } from 'components/terminal';
-import SendOnChainButton from './bitcoind/actions/SendOnChainButton';
+import SendOnChainButton from './bitcoin/actions/SendOnChainButton';
 import { OpenChannelButtons, PaymentButtons } from './lightning/actions';
 import { MintAssetButton, NewAddressButton, SendAssetButton } from './tap/actions';
 
