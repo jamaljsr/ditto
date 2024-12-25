@@ -15,7 +15,7 @@ interface Props {
 
 const InfoTab: React.FC<Props> = ({ node }) => {
   const { l } = usePrefixedTranslation('cmps.designer.bitcoind.InfoTab');
-  const { nodes } = useStoreState(s => s.bitcoind);
+  const { nodes } = useStoreState(s => s.bitcoin);
   const details: DetailValues = [
     { label: l('nodeType'), value: node.type },
     { label: l('implementation'), value: dockerConfigs[node.implementation].name },

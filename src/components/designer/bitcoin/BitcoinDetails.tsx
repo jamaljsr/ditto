@@ -15,8 +15,8 @@ import { getNetworkBackendId } from 'utils/network';
 const BitcoindDetails: React.FC<{ node: BitcoinNode }> = ({ node }) => {
   const { l } = usePrefixedTranslation('cmps.designer.bitcoind.BitcoinDetails');
   const [activeTab, setActiveTab] = useState('info');
-  const { getInfo } = useStoreActions(s => s.bitcoind);
-  const { nodes } = useStoreState(s => s.bitcoind);
+  const { getInfo } = useStoreActions(s => s.bitcoin);
+  const { nodes } = useStoreState(s => s.bitcoin);
   const getInfoAsync = useAsync(
     async (node: BitcoinNode) => {
       if (node.status === Status.Started) {

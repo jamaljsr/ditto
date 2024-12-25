@@ -168,8 +168,10 @@ const lightningModel: LightningModel = {
       const api = injections.lightningFactory.getService(node);
       const { address } = await api.getNewAddress(node);
       const coins = fromSatsNumeric(sats);
-      await injections.bitcoindService.sendFunds(btcNode, address, coins);
-      await getStoreActions().bitcoind.mine({
+      await injections.bitcoinFactory
+        .getService(btcNode)
+        .sendFunds(btcNode, address, coins);
+      await getStoreActions().bitcoin.mine({
         blocks: BLOCKS_TIL_CONFIRMED,
         node: btcNode,
       });
@@ -205,7 +207,7 @@ const lightningModel: LightningModel = {
       const btcNode =
         network.nodes.bitcoin.find(n => n.name === from.backendName) ||
         network.nodes.bitcoin[0];
-      await getStoreActions().bitcoind.mine({
+      await getStoreActions().bitcoin.mine({
         blocks: BLOCKS_TIL_CONFIRMED,
         node: btcNode,
       });
@@ -228,7 +230,7 @@ const lightningModel: LightningModel = {
       // mine some blocks to confirm the txn
       const network = getStoreState().network.networkById(node.networkId);
       const btcNode = network.nodes.bitcoin[0];
-      await getStoreActions().bitcoind.mine({
+      await getStoreActions().bitcoin.mine({
         blocks: BLOCKS_TIL_CONFIRMED,
         node: btcNode,
       });
@@ -277,7 +279,7 @@ const lightningModel: LightningModel = {
     await delay(longestDelay * 1000);
   }),
   mineListener: thunkOn(
-    (actions, storeActions) => storeActions.bitcoind.mine,
+    (actions, storeActions) => storeActions.bitcoin.mine,
     async (actions, { payload }, { getStoreState, getStoreActions }) => {
       const { notify } = getStoreActions().app;
       // update all lightning nodes info when a block in mined

@@ -6,8 +6,18 @@ import { ConnectedRouter } from 'connected-react-router';
 import { StoreProvider } from 'easy-peasy';
 import { createMemoryHistory } from 'history';
 import { createReduxStore } from 'store';
-import { LightningService, StoreInjections, TapService } from 'types';
+import { BitcoinService, LightningService, StoreInjections, TapService } from 'types';
 
+export const bitcoinServiceMock: jest.Mocked<BitcoinService> = {
+  waitUntilOnline: jest.fn(),
+  createDefaultWallet: jest.fn(),
+  getBlockchainInfo: jest.fn(),
+  getWalletInfo: jest.fn(),
+  getNewAddress: jest.fn(),
+  connectPeers: jest.fn(),
+  sendFunds: jest.fn(),
+  mine: jest.fn(),
+};
 export const lightningServiceMock: jest.Mocked<LightningService> = {
   getInfo: jest.fn(),
   getBalances: jest.fn(),
@@ -65,15 +75,8 @@ export const injections: StoreInjections = {
     save: jest.fn(),
     checkForUpdates: jest.fn(),
   },
-  bitcoindService: {
-    waitUntilOnline: jest.fn(),
-    createDefaultWallet: jest.fn(),
-    getBlockchainInfo: jest.fn(),
-    getWalletInfo: jest.fn(),
-    getNewAddress: jest.fn(),
-    connectPeers: jest.fn(),
-    sendFunds: jest.fn(),
-    mine: jest.fn(),
+  bitcoinFactory: {
+    getService: () => bitcoinServiceMock,
   },
   lightningFactory: {
     getService: () => lightningServiceMock,

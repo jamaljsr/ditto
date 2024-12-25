@@ -1,6 +1,6 @@
 import { debug } from 'electron-log';
 import { BitcoinNode, EclairNode, LightningNode, OpenChannelOptions } from 'shared/types';
-import { bitcoindService } from 'lib/bitcoin';
+import { BitcoinFactory } from 'lib/bitcoin';
 import { LightningService } from 'types';
 import { waitFor } from 'utils/async';
 import { toSats } from 'utils/units';
@@ -53,7 +53,8 @@ class EclairService implements LightningService {
     backend?: BitcoinNode,
   ): Promise<PLN.LightningNodeBalances> {
     const btcNode = this.validateBackend('getBalances', backend);
-    const balances = await bitcoindService.getWalletInfo(btcNode);
+    const bitcoinFactory = new BitcoinFactory();
+    const balances = await bitcoinFactory.getService(btcNode).getWalletInfo(btcNode);
     const unconfirmed = balances.unconfirmed_balance + balances.immature_balance;
     return {
       total: toSats(balances.balance + unconfirmed),

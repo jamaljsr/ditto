@@ -9,33 +9,33 @@ import { RootModel } from './';
 
 const { l } = prefixTranslation('store.models.bitcoind');
 
-export interface BitcoindNodeMapping {
+export interface BitcoinNodeMapping {
   // key must be unique across networks. use getNetworkBackendId(node)
-  [key: string]: BitcoindNodeModel;
+  [key: string]: BitcoinNodeModel;
 }
 
-export interface BitcoindNodeModel {
+export interface BitcoinNodeModel {
   chainInfo?: ChainInfo;
   walletInfo?: WalletInfo;
 }
 
-export interface BitcoindModel {
-  nodes: BitcoindNodeMapping;
-  removeNode: Action<BitcoindModel, BitcoinNode>;
-  clearNodes: Action<BitcoindModel, void>;
+export interface BitcoinModel {
+  nodes: BitcoinNodeMapping;
+  removeNode: Action<BitcoinModel, BitcoinNode>;
+  clearNodes: Action<BitcoinModel, void>;
   setInfo: Action<
-    BitcoindModel,
+    BitcoinModel,
     { node: BitcoinNode; chainInfo: ChainInfo; walletInfo: WalletInfo }
   >;
-  getInfo: Thunk<BitcoindModel, BitcoinNode, StoreInjections>;
+  getInfo: Thunk<BitcoinModel, BitcoinNode, StoreInjections>;
   mine: Thunk<
-    BitcoindModel,
+    BitcoinModel,
     { blocks: number; node: BitcoinNode },
     StoreInjections,
     RootModel
   >;
   sendFunds: Thunk<
-    BitcoindModel,
+    BitcoinModel,
     { node: BitcoinNode; toAddress: string; amount: number; autoMine: boolean },
     StoreInjections,
     RootModel,
@@ -43,7 +43,7 @@ export interface BitcoindModel {
   >;
 }
 
-const bitcoindModel: BitcoindModel = {
+const bitcoinModel: BitcoinModel = {
   // computed properties/functions
   nodes: {}, // reducer actions (mutations allowed thx to immer)
   removeNode: action((state, node) => {
@@ -59,14 +59,18 @@ const bitcoindModel: BitcoindModel = {
     state.nodes[id].walletInfo = walletInfo;
   }),
   getInfo: thunk(async (actions, node, { injections }) => {
-    const chainInfo = await injections.bitcoindService.getBlockchainInfo(node);
-    const walletInfo = await injections.bitcoindService.getWalletInfo(node);
+    const chainInfo = await injections.bitcoinFactory
+      .getService(node)
+      .getBlockchainInfo(node);
+    const walletInfo = await injections.bitcoinFactory
+      .getService(node)
+      .getWalletInfo(node);
     actions.setInfo({ node, chainInfo, walletInfo });
   }),
   mine: thunk(async (actions, { blocks, node }, { injections, getStoreState }) => {
     if (blocks < 0) throw new Error(l('mineError'));
 
-    await injections.bitcoindService.mine(blocks, node);
+    await injections.bitcoinFactory.getService(node).mine(blocks, node);
     // add a small delay to allow the block to propagate to all nodes
     await delay(500);
     // update info for all bitcoin nodes
@@ -77,11 +81,13 @@ const bitcoindModel: BitcoindModel = {
   }),
   sendFunds: thunk(
     async (actions, { node, toAddress, amount, autoMine }, { injections }) => {
-      const txid = await injections.bitcoindService.sendFunds(node, toAddress, amount);
+      const txid = await injections.bitcoinFactory
+        .getService(node)
+        .sendFunds(node, toAddress, amount);
       if (autoMine) await actions.mine({ blocks: 6, node });
       return txid;
     },
   ),
 };
 
-export default bitcoindModel;
+export default bitcoinModel;
