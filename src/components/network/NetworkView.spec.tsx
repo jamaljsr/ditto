@@ -15,6 +15,7 @@ import {
   renderWithProviders,
   suppressConsoleErrors,
   testCustomImages,
+  bitcoinServiceMock,
 } from 'utils/tests';
 import NetworkView from './NetworkView';
 
@@ -24,9 +25,6 @@ const fsMock = fsExtra as jest.Mocked<typeof fsExtra>;
 const logMock = log as jest.Mocked<typeof log>;
 const ipcMock = ipc as jest.Mocked<typeof ipc>;
 const dialogMock = electron.remote.dialog as jest.Mocked<typeof electron.remote.dialog>;
-const bitcoindServiceMock = injections.bitcoindService as jest.Mocked<
-  typeof injections.bitcoindService
->;
 const dockerServiceMock = injections.dockerService as jest.Mocked<
   typeof injections.dockerService
 >;
@@ -66,7 +64,7 @@ describe('NetworkView Component', () => {
           1: initChartFromNetwork(network),
         },
       },
-      bitcoind: withBitcoinData ? bitcoinData : undefined,
+      bitcoin: withBitcoinData ? bitcoinData : undefined,
     };
     const route = `/network/${id}`;
     const history = createMemoryHistory({ initialEntries: [route] });
@@ -82,7 +80,7 @@ describe('NetworkView Component', () => {
 
   beforeEach(() => {
     lightningServiceMock.waitUntilOnline.mockResolvedValue();
-    bitcoindServiceMock.waitUntilOnline.mockResolvedValue();
+    bitcoinServiceMock.waitUntilOnline.mockResolvedValue();
     dockerServiceMock.getImages.mockResolvedValue([]);
   });
 
@@ -202,11 +200,11 @@ describe('NetworkView Component', () => {
 
   describe('node state', () => {
     beforeEach(() => {
-      bitcoindServiceMock.getBlockchainInfo.mockResolvedValue({
+      bitcoinServiceMock.getBlockchainInfo.mockResolvedValue({
         blocks: 321,
         bestblockhash: 'abcdef',
       } as any);
-      bitcoindServiceMock.getWalletInfo.mockResolvedValue({
+      bitcoinServiceMock.getWalletInfo.mockResolvedValue({
         balance: 10,
         immature_balance: 20,
       } as any);
@@ -219,7 +217,7 @@ describe('NetworkView Component', () => {
     });
 
     it('should handle an error when fetching bitcoin data on mount', async () => {
-      bitcoindServiceMock.getBlockchainInfo.mockRejectedValue(new Error('test-err'));
+      bitcoinServiceMock.getBlockchainInfo.mockRejectedValue(new Error('test-err'));
       const { findByText } = renderComponent('1', Status.Started, [], false);
       expect(
         await findByText('Failed to fetch the bitcoin block height'),
@@ -229,7 +227,7 @@ describe('NetworkView Component', () => {
 
     it('should not fetch bitcoin data if it is already in the store', async () => {
       renderComponent('1', Status.Started, [], true);
-      expect(bitcoindServiceMock.getBlockchainInfo).not.toHaveBeenCalled();
+      expect(bitcoinServiceMock.getBlockchainInfo).not.toHaveBeenCalled();
     });
   });
 

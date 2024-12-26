@@ -2,22 +2,19 @@ import React from 'react';
 import { fireEvent } from '@testing-library/dom';
 import { waitFor } from '@testing-library/react';
 import { Status, TapNode } from 'shared/types';
-import { BitcoindLibrary } from 'types';
 import { initChartFromNetwork } from 'utils/chart';
 import { defaultRepoState } from 'utils/constants';
 import { createLitdNetworkNode } from 'utils/network';
 import {
   defaultTapAsset,
   getNetwork,
-  injections,
   lightningServiceMock,
   renderWithProviders,
   tapServiceMock,
   testNodeDocker,
+  bitcoinServiceMock,
 } from 'utils/tests';
 import MintAssetModal from './MintAssetModal';
-
-const bitcoindServiceMock = injections.bitcoindService as jest.Mocked<BitcoindLibrary>;
 
 describe('MintAssetModal', () => {
   let unmount: () => void;
@@ -150,7 +147,7 @@ describe('MintAssetModal', () => {
       fireEvent.click(getByText('Mint'));
       await waitFor(() => {
         expect(tapServiceMock.mintAsset).toHaveBeenCalled();
-        expect(bitcoindServiceMock.mine).toHaveBeenCalledTimes(1);
+        expect(bitcoinServiceMock.mine).toHaveBeenCalledTimes(1);
       });
     });
 
@@ -167,7 +164,7 @@ describe('MintAssetModal', () => {
             asset: expect.objectContaining({ assetType: 'COLLECTIBLE' }),
           }),
         );
-        expect(bitcoindServiceMock.mine).toHaveBeenCalledTimes(1);
+        expect(bitcoinServiceMock.mine).toHaveBeenCalledTimes(1);
       });
     });
 

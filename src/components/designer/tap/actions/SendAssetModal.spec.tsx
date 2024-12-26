@@ -2,7 +2,6 @@ import React from 'react';
 import { fireEvent } from '@testing-library/dom';
 import { waitFor } from '@testing-library/react';
 import { Status, TapdNode } from 'shared/types';
-import { BitcoindLibrary } from 'types';
 import { initChartFromNetwork } from 'utils/chart';
 import { defaultRepoState } from 'utils/constants';
 import { createLitdNetworkNode } from 'utils/network';
@@ -11,15 +10,13 @@ import {
   defaultTapAsset,
   defaultTapBalance,
   getNetwork,
-  injections,
   lightningServiceMock,
   renderWithProviders,
   tapServiceMock,
   testNodeDocker,
+  bitcoinServiceMock,
 } from 'utils/tests';
 import SendAssetModal from './SendAssetModal';
-
-const bitcoindServiceMock = injections.bitcoindService as jest.Mocked<BitcoindLibrary>;
 
 describe('SendAssetModal', () => {
   let unmount: () => void;
@@ -262,7 +259,7 @@ describe('SendAssetModal', () => {
 
       await waitFor(() => {
         expect(tapServiceMock.sendAsset).toHaveBeenCalled();
-        expect(bitcoindServiceMock.mine).toHaveBeenCalled();
+        expect(bitcoinServiceMock.mine).toHaveBeenCalled();
         expect(tapServiceMock.listBalances).toHaveBeenCalled();
       });
 
@@ -302,7 +299,7 @@ describe('SendAssetModal', () => {
       fireEvent.click(getByText('Send'));
       await waitFor(() => {
         expect(tapServiceMock.sendAsset).toHaveBeenCalled();
-        expect(bitcoindServiceMock.mine).toHaveBeenCalled();
+        expect(bitcoinServiceMock.mine).toHaveBeenCalled();
       });
     });
 

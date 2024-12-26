@@ -16,7 +16,7 @@ import {
   testManagedImages,
 } from 'utils/tests';
 import appModel from './app';
-import bitcoindModel from './bitcoind';
+import bitcoinModel from './bitcoin';
 import designerModel from './designer';
 import lightningModel from './lightning';
 import litModel from './lit';
@@ -27,7 +27,7 @@ describe('LIT Model', () => {
     app: appModel,
     network: networkModel,
     lightning: lightningModel,
-    bitcoind: bitcoindModel,
+    bitcoin: bitcoinModel,
     designer: designerModel,
     lit: litModel,
   };

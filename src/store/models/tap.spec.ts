@@ -2,7 +2,6 @@ import { createStore } from 'easy-peasy';
 import { defaultTapdMintAsset } from 'shared';
 import { Status, TapdNode } from 'shared/types';
 import * as PTAP from 'lib/tap/types';
-import { BitcoindLibrary } from 'types';
 import { initChartFromNetwork } from 'utils/chart';
 import {
   defaultTapAsset,
@@ -10,22 +9,21 @@ import {
   getNetwork,
   injections,
   tapServiceMock,
+  bitcoinServiceMock,
 } from 'utils/tests';
 import appModel from './app';
-import bitcoindModel from './bitcoind';
+import bitcoinModel from './bitcoin';
 import designerModel from './designer';
 import lightningModel from './lightning';
 import networkModel from './network';
 import tapModel, { MintAssetPayload } from './tap';
-
-const bitcoindServiceMock = injections.bitcoindService as jest.Mocked<BitcoindLibrary>;
 
 describe('TAP Model', () => {
   const rootModel = {
     app: appModel,
     network: networkModel,
     lightning: lightningModel,
-    bitcoind: bitcoindModel,
+    bitcoin: bitcoinModel,
     designer: designerModel,
     tap: tapModel,
   };
@@ -110,7 +108,7 @@ describe('TAP Model', () => {
       tap[1],
       expect.objectContaining({ asset: expect.objectContaining({ name: 'my-asset' }) }),
     );
-    expect(bitcoindServiceMock.mine).toHaveBeenCalledWith(
+    expect(bitcoinServiceMock.mine).toHaveBeenCalledWith(
       6,
       expect.objectContaining({ name: 'backend1' }),
     );
@@ -136,7 +134,7 @@ describe('TAP Model', () => {
       expect.objectContaining({ asset: expect.objectContaining({ name: 'my-asset' }) }),
     );
     expect(tapServiceMock.finalizeBatch).not.toHaveBeenCalled();
-    expect(bitcoindServiceMock.mine).not.toHaveBeenCalled();
+    expect(bitcoinServiceMock.mine).not.toHaveBeenCalled();
   });
 
   it('should format the asset amount', async () => {

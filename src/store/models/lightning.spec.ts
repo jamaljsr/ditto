@@ -6,7 +6,6 @@ import {
   LightningNodeChannel,
   LightningNodeInfo,
 } from 'lib/lightning/types';
-import { BitcoindLibrary } from 'types';
 import * as asyncUtil from 'utils/async';
 import { initChartFromNetwork } from 'utils/chart';
 import {
@@ -15,23 +14,23 @@ import {
   injections,
   lightningServiceMock,
   mockProperty,
+  bitcoinServiceMock,
 } from 'utils/tests';
 import appModel from './app';
-import bitcoindModel from './bitcoind';
+import bitcoinModel from './bitcoin';
 import designerModel from './designer';
 import lightningModel from './lightning';
 import networkModel from './network';
 
 jest.mock('utils/async');
 const asyncUtilMock = asyncUtil as jest.Mocked<typeof asyncUtil>;
-const bitcoindServiceMock = injections.bitcoindService as jest.Mocked<BitcoindLibrary>;
 
 describe('Lightning Model', () => {
   const rootModel = {
     app: appModel,
     network: networkModel,
     lightning: lightningModel,
-    bitcoind: bitcoindModel,
+    bitcoin: bitcoinModel,
     designer: designerModel,
   };
   const network = getNetwork();
@@ -55,7 +54,7 @@ describe('Lightning Model', () => {
     store = createStore(rootModel, { injections, initialState });
 
     asyncUtilMock.delay.mockResolvedValue(Promise.resolve());
-    bitcoindServiceMock.sendFunds.mockResolvedValue('txid');
+    bitcoinServiceMock.sendFunds.mockResolvedValue('txid');
     lightningServiceMock.getNewAddress.mockResolvedValue({ address: 'bc1aaaa' });
     lightningServiceMock.getInfo.mockResolvedValue(
       defaultStateInfo({
@@ -155,7 +154,7 @@ describe('Lightning Model', () => {
     await openChannel({ from, to, sats, autoFund: false, isPrivate: false });
     expect(lightningServiceMock.getInfo).toHaveBeenCalledTimes(1);
     expect(lightningServiceMock.openChannel).toHaveBeenCalledTimes(1);
-    expect(bitcoindServiceMock.mine).toHaveBeenCalledTimes(1);
+    expect(bitcoinServiceMock.mine).toHaveBeenCalledTimes(1);
   });
 
   it('should open a channel and mine on the first bitcoin node', async () => {
@@ -174,7 +173,7 @@ describe('Lightning Model', () => {
     await getInfo(to);
     await openChannel({ from, to, sats, autoFund: false, isPrivate: false });
     const btcNode = store.getState().network.networks[0].nodes.bitcoin[0];
-    expect(bitcoindServiceMock.mine).toHaveBeenCalledWith(6, btcNode);
+    expect(bitcoinServiceMock.mine).toHaveBeenCalledWith(6, btcNode);
   });
 
   it('should cause some delay waiting for nodes', async () => {

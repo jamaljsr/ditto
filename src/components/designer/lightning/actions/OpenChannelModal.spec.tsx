@@ -4,7 +4,7 @@ import { fireEvent, waitForElementToBeRemoved } from '@testing-library/dom';
 import { waitFor } from '@testing-library/react';
 import { Status } from 'shared/types';
 import { LightningNodeChannelAsset } from 'lib/lightning/types';
-import { BitcoindLibrary, Network } from 'types';
+import { Network } from 'types';
 import { initChartFromNetwork } from 'utils/chart';
 import { defaultRepoState } from 'utils/constants';
 import { createNetwork, mapToTapd } from 'utils/network';
@@ -14,16 +14,14 @@ import {
   defaultTapAsset,
   defaultTapBalance,
   getNetwork,
-  injections,
   lightningServiceMock,
   renderWithProviders,
   suppressConsoleErrors,
   tapServiceMock,
   testManagedImages,
+  bitcoinServiceMock,
 } from 'utils/tests';
 import OpenChannelModal from './OpenChannelModal';
-
-const bitcoindServiceMock = injections.bitcoindService as jest.Mocked<BitcoindLibrary>;
 
 describe('OpenChannelModal', () => {
   let unmount: () => void;
@@ -198,7 +196,7 @@ describe('OpenChannelModal', () => {
         unconfirmed: '200',
         total: '300',
       });
-      bitcoindServiceMock.sendFunds.mockResolvedValue('txid');
+      bitcoinServiceMock.sendFunds.mockResolvedValue('txid');
     });
 
     it('should open a channel successfully', async () => {
@@ -216,7 +214,7 @@ describe('OpenChannelModal', () => {
         amount: 1000,
         isPrivate: false,
       });
-      expect(bitcoindServiceMock.mine).toHaveBeenCalledTimes(1);
+      expect(bitcoinServiceMock.mine).toHaveBeenCalledTimes(1);
     });
 
     it('should open a private channel successfully', async () => {
@@ -235,7 +233,7 @@ describe('OpenChannelModal', () => {
         amount: 1000,
         isPrivate: true,
       });
-      expect(bitcoindServiceMock.mine).toHaveBeenCalledTimes(1);
+      expect(bitcoinServiceMock.mine).toHaveBeenCalledTimes(1);
     });
 
     it('should open a channel and deposit funds', async () => {
@@ -252,8 +250,8 @@ describe('OpenChannelModal', () => {
         amount: 1000,
         isPrivate: false,
       });
-      expect(bitcoindServiceMock.mine).toHaveBeenCalledTimes(2);
-      expect(bitcoindServiceMock.sendFunds).toHaveBeenCalledTimes(1);
+      expect(bitcoinServiceMock.mine).toHaveBeenCalledTimes(2);
+      expect(bitcoinServiceMock.sendFunds).toHaveBeenCalledTimes(1);
       expect(lightningServiceMock.getNewAddress).toHaveBeenCalledTimes(1);
     });
 
@@ -310,7 +308,7 @@ describe('OpenChannelModal', () => {
         unconfirmed: '200',
         total: '300',
       });
-      bitcoindServiceMock.sendFunds.mockResolvedValue('txid');
+      bitcoinServiceMock.sendFunds.mockResolvedValue('txid');
       tapServiceMock.listBalances.mockResolvedValue([
         defaultTapBalance({ id: 'abcd', name: 'test asset', balance: '1000' }),
         defaultTapBalance({ id: 'efgh', name: 'other asset', balance: '5000' }),
@@ -394,8 +392,8 @@ describe('OpenChannelModal', () => {
         'abcd',
         1000,
       );
-      expect(bitcoindServiceMock.mine).toHaveBeenCalledTimes(2);
-      expect(bitcoindServiceMock.sendFunds).toHaveBeenCalledTimes(1);
+      expect(bitcoinServiceMock.mine).toHaveBeenCalledTimes(2);
+      expect(bitcoinServiceMock.sendFunds).toHaveBeenCalledTimes(1);
       expect(lightningServiceMock.getNewAddress).toHaveBeenCalledTimes(1);
     });
 

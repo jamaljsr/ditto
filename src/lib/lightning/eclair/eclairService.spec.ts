@@ -1,5 +1,5 @@
 import { WalletInfo } from 'bitcoin-core';
-import bitcoindService from 'lib/bitcoin/bitcoindService';
+import bitcoindService from 'lib/bitcoin/bitcoind/bitcoindService';
 import { defaultRepoState } from 'utils/constants';
 import { defaultStateBalances, defaultStateInfo, getNetwork } from 'utils/tests';
 import { eclairService } from './';
@@ -7,7 +7,7 @@ import * as eclairApi from './eclairApi';
 import * as ELN from './types';
 
 jest.mock('./eclairApi');
-jest.mock('lib/bitcoin/bitcoindService');
+jest.mock('lib/bitcoin/bitcoind/bitcoindService');
 jest.mock('utils/async', () => {
   const actualAsync = jest.requireActual('utils/async');
   return {

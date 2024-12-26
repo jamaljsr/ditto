@@ -1,7 +1,6 @@
 import React from 'react';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { Status } from 'shared/types';
-import { BitcoindLibrary } from 'types';
 import * as asyncUtil from 'utils/async';
 import { initChartFromNetwork } from 'utils/chart';
 import { defaultRepoState } from 'utils/constants';
@@ -9,6 +8,7 @@ import { createNetwork } from 'utils/network';
 import {
   injections,
   lightningServiceMock,
+  bitcoinServiceMock,
   litdServiceMock,
   renderWithProviders,
   tapServiceMock,
@@ -22,7 +22,6 @@ const asyncUtilMock = asyncUtil as jest.Mocked<typeof asyncUtil>;
 const dockerServiceMock = injections.dockerService as jest.Mocked<
   typeof injections.dockerService
 >;
-const bitcoindServiceMock = injections.bitcoindService as jest.Mocked<BitcoindLibrary>;
 
 describe('RenameNodeModal', () => {
   let unmount: () => void;
@@ -144,7 +143,7 @@ describe('RenameNodeModal', () => {
     it('should update the started Backend node name', async () => {
       asyncUtilMock.delay.mockResolvedValue(Promise.resolve());
       lightningServiceMock.waitUntilOnline.mockResolvedValue();
-      bitcoindServiceMock.waitUntilOnline.mockResolvedValue();
+      bitcoinServiceMock.waitUntilOnline.mockResolvedValue();
       tapServiceMock.waitUntilOnline.mockResolvedValue();
       litdServiceMock.waitUntilOnline.mockResolvedValue();
       const { getByText, getByLabelText, store } = await renderComponent(

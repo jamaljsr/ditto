@@ -6,16 +6,12 @@ import { LightningNodeChannelAsset } from 'lib/lightning/types';
 import { initChartFromNetwork } from 'utils/chart';
 import {
   getNetwork,
-  injections,
   lightningServiceMock,
   renderWithProviders,
   suppressConsoleErrors,
+  bitcoinServiceMock,
 } from 'utils/tests';
 import Channel from './Channel';
-
-const bitcoindServiceMock = injections.bitcoindService as jest.Mocked<
-  typeof injections.bitcoindService
->;
 
 describe('Channel component', () => {
   const renderComponent = (
@@ -164,7 +160,7 @@ describe('Channel component', () => {
     beforeEach(() => {
       lightningServiceMock.closeChannel.mockResolvedValue(true);
       lightningServiceMock.getChannels.mockResolvedValue([]);
-      bitcoindServiceMock.mine.mockResolvedValue(['txid']);
+      bitcoinServiceMock.mine.mockResolvedValue(['txid']);
     });
 
     it('should show the close channel modal', async () => {
@@ -188,7 +184,7 @@ describe('Channel component', () => {
       await waitFor(() => getByLabelText('check-circle'));
       expect(getByText('The channel has been closed')).toBeInTheDocument();
       expect(lightningServiceMock.closeChannel).toHaveBeenCalledTimes(1);
-      expect(bitcoindServiceMock.mine).toHaveBeenCalledTimes(1);
+      expect(bitcoinServiceMock.mine).toHaveBeenCalledTimes(1);
     });
 
     it('should display an error if the node is not started', async () => {

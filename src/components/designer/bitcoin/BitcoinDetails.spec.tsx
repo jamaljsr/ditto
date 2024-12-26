@@ -3,7 +3,7 @@ import { shell } from 'electron';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { Status } from 'shared/types';
 import { bitcoinCredentials, dockerConfigs } from 'utils/constants';
-import { getNetwork, injections, renderWithProviders } from 'utils/tests';
+import { getNetwork, renderWithProviders, bitcoinServiceMock } from 'utils/tests';
 import BitcoindDetails from './BitcoinDetails';
 
 describe('BitcoindDetails', () => {
@@ -98,8 +98,8 @@ describe('BitcoindDetails', () => {
   });
 
   describe('with node Started', () => {
-    const chainMock = injections.bitcoindService.getBlockchainInfo as jest.Mock;
-    const walletMock = injections.bitcoindService.getWalletInfo as jest.Mock;
+    const chainMock = bitcoinServiceMock.getBlockchainInfo as jest.Mock;
+    const walletMock = bitcoinServiceMock.getWalletInfo as jest.Mock;
 
     beforeEach(() => {
       chainMock.mockResolvedValue({ blocks: 123, bestblockhash: 'abcdef' });
