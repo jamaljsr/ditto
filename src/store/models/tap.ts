@@ -261,7 +261,7 @@ const tapModel: TapModel = {
         // update network
         const btcNode = network.nodes.bitcoin[0];
         // missing await is intentional, we don't have to wait for bitcoin to mine
-        getStoreActions().bitcoind.mine({
+        getStoreActions().bitcoin.mine({
           blocks: BLOCKS_TIL_CONFIRMED,
           node: btcNode,
         });
@@ -310,7 +310,7 @@ const tapModel: TapModel = {
       const res = await api.sendAsset(node, sendReq);
       // update network
       const btcNode: BitcoinNode = network.nodes.bitcoin[0];
-      await getStoreActions().bitcoind.mine({
+      await getStoreActions().bitcoin.mine({
         blocks: BLOCKS_TIL_CONFIRMED,
         node: btcNode,
       });
@@ -381,7 +381,7 @@ const tapModel: TapModel = {
       // mine some blocks to confirm the txn
       const network = getStoreState().network.networkById(from.networkId);
       const btcNode = network.nodes.bitcoin[0];
-      await getStoreActions().bitcoind.mine({
+      await getStoreActions().bitcoin.mine({
         blocks: BLOCKS_TIL_CONFIRMED,
         node: btcNode,
       });
@@ -392,7 +392,7 @@ const tapModel: TapModel = {
     },
   ),
   mineListener: thunkOn(
-    (actions, storeActions) => storeActions.bitcoind.mine,
+    (actions, storeActions) => storeActions.bitcoin.mine,
     async (actions, { payload }, { getStoreState, getStoreActions }) => {
       const { notify } = getStoreActions().app;
       // update all tap nodes info when a block in mined

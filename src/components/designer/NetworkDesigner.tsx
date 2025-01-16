@@ -9,7 +9,7 @@ import { useStoreActions, useStoreState } from 'store';
 import { Network } from 'types';
 import { Loader, RenameNodeModal } from 'components/common';
 import AdvancedOptionsModal from 'components/common/AdvancedOptionsModal';
-import SendOnChainModal from './bitcoind/actions/SendOnChainModal';
+import SendOnChainModal from './bitcoin/actions/SendOnChainModal';
 import { Link, NodeInner, Port, Ports } from './custom';
 import { CanvasOuterDark, CanvasOuterLight } from './custom/CanvasOuter';
 import {

@@ -6,9 +6,9 @@ import {
   defaultStateBalances,
   defaultStateInfo,
   getNetwork,
-  injections,
   lightningServiceMock,
   renderWithProviders,
+  bitcoinServiceMock,
 } from 'utils/tests';
 import NetworkActions from './NetworkActions';
 
@@ -26,7 +26,7 @@ describe('NetworkActions Component', () => {
       network: {
         networks: [network],
       },
-      bitcoind: {
+      bitcoin: {
         nodes: {
           '1-backend1': {
             chainInfo: {
@@ -123,7 +123,7 @@ describe('NetworkActions Component', () => {
   });
 
   it('should mine a block when the Mine button is clicked', async () => {
-    const mineMock = injections.bitcoindService.mine as jest.Mock;
+    const mineMock = bitcoinServiceMock.mine as jest.Mock;
     mineMock.mockResolvedValue(true);
     const { getByText, store } = renderComponent(Status.Started);
     fireEvent.click(getByText('Quick Mine'));
@@ -134,7 +134,7 @@ describe('NetworkActions Component', () => {
   });
 
   it('should display an error if mining fails', async () => {
-    const mineMock = injections.bitcoindService.mine as jest.Mock;
+    const mineMock = bitcoinServiceMock.mine as jest.Mock;
     mineMock.mockRejectedValue(new Error('connection failed'));
     const { getByText, findByText } = renderComponent(Status.Started);
     fireEvent.click(getByText('Quick Mine'));

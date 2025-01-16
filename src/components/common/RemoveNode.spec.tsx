@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { CommonNode, Status } from 'shared/types';
-import { BitcoindLibrary, DockerLibrary } from 'types';
+import { DockerLibrary } from 'types';
 import { initChartFromNetwork } from 'utils/chart';
 import { defaultRepoState } from 'utils/constants';
 import { createBitcoindNetworkNode, createLndNetworkNode } from 'utils/network';
@@ -9,6 +9,7 @@ import {
   getNetwork,
   injections,
   lightningServiceMock,
+  bitcoinServiceMock,
   renderWithProviders,
   suppressConsoleErrors,
   tapServiceMock,
@@ -17,7 +18,6 @@ import {
 import RemoveNode from './RemoveNode';
 
 const dockerServiceMock = injections.dockerService as jest.Mocked<DockerLibrary>;
-const bitcoindServiceMock = injections.bitcoindService as jest.Mocked<BitcoindLibrary>;
 
 describe('RemoveNode', () => {
   const renderComponent = (
@@ -136,7 +136,7 @@ describe('RemoveNode', () => {
     beforeEach(() => {
       lightningServiceMock.getChannels.mockResolvedValue([]);
       lightningServiceMock.waitUntilOnline.mockResolvedValue(Promise.resolve());
-      bitcoindServiceMock.waitUntilOnline.mockResolvedValue(Promise.resolve());
+      bitcoinServiceMock.waitUntilOnline.mockResolvedValue(Promise.resolve());
       tapServiceMock.waitUntilOnline.mockResolvedValue(Promise.resolve());
     });
 

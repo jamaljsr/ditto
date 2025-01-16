@@ -284,7 +284,7 @@ const appModel: AppModel = {
     // reset the lightning nodes state
     getStoreActions().lightning.clearNodes();
     // reset the bitcoin nodes state
-    getStoreActions().bitcoind.clearNodes();
+    getStoreActions().bitcoin.clearNodes();
     // reset the tap nodes state
     getStoreActions().tap.clearNodes();
     // change the route

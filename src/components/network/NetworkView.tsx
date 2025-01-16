@@ -72,10 +72,10 @@ const NetworkView: React.FC<RouteComponentProps<MatchParams>> = ({ match }) => {
   const [editingDescription, setEditingDescription] = useState('');
 
   const { dockerImages } = useStoreState(s => s.app);
-  const { nodes: bitcoinData } = useStoreState(s => s.bitcoind);
+  const { nodes: bitcoinData } = useStoreState(s => s.bitcoin);
   const { navigateTo, notify } = useStoreActions(s => s.app);
   const { clearActiveId } = useStoreActions(s => s.designer);
-  const { getInfo } = useStoreActions(s => s.bitcoind);
+  const { getInfo } = useStoreActions(s => s.bitcoin);
   const { toggle, rename, remove, exportNetwork } = useStoreActions(s => s.network);
   const toggleAsync = useAsyncCallback(toggle);
   const renameAsync = useAsyncCallback(

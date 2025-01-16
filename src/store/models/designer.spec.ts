@@ -3,7 +3,7 @@ import { waitFor } from '@testing-library/react';
 import { notification } from 'antd';
 import { createStore } from 'easy-peasy';
 import { Status } from 'shared/types';
-import { BitcoindLibrary, DockerLibrary } from 'types';
+import { DockerLibrary } from 'types';
 import { initChartFromNetwork } from 'utils/chart';
 import { defaultRepoState, LOADING_NODE_ID } from 'utils/constants';
 import * as files from 'utils/files';
@@ -14,9 +14,10 @@ import {
   lightningServiceMock,
   testNodeDocker,
   testRepoState,
+  bitcoinServiceMock,
 } from 'utils/tests';
 import appModel from './app';
-import bitcoindModel from './bitcoind';
+import bitcoinModel from './bitcoin';
 import designerModel from './designer';
 import lightningModel from './lightning';
 import modalsModel from './modals';
@@ -43,7 +44,7 @@ describe('Designer model', () => {
     app: appModel,
     network: networkModel,
     lightning: lightningModel,
-    bitcoind: bitcoindModel,
+    bitcoin: bitcoinModel,
     designer: designerModel,
     modals: modalsModel,
     tap: tapModel,
@@ -525,8 +526,6 @@ describe('Designer model', () => {
 
     describe('onCanvasDrop', () => {
       const mockDockerService = injections.dockerService as jest.Mocked<DockerLibrary>;
-      const mockBitcoindService =
-        injections.bitcoindService as jest.Mocked<BitcoindLibrary>;
       const lndLatest = defaultRepoState.images.LND.latest;
       const btcLatest = defaultRepoState.images.bitcoind.latest;
       const tapdLatest = defaultRepoState.images.tapd.latest;
@@ -723,7 +722,7 @@ describe('Designer model', () => {
       });
 
       it('should start the node if the network is running', async () => {
-        mockBitcoindService.waitUntilOnline.mockResolvedValue();
+        bitcoinServiceMock.waitUntilOnline.mockResolvedValue();
         lightningServiceMock.waitUntilOnline.mockResolvedValue();
         const { setStatus } = store.getActions().network;
         setStatus({ id: firstNetwork().id, status: Status.Started });

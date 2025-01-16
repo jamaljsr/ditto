@@ -2,19 +2,16 @@ import React from 'react';
 import { fireEvent } from '@testing-library/dom';
 import { waitFor } from '@testing-library/react';
 import { Status } from 'shared/types';
-import { BitcoindLibrary } from 'types';
 import { initChartFromNetwork } from 'utils/chart';
 import { defaultRepoState } from 'utils/constants';
 import { createNetwork } from 'utils/network';
 import {
-  injections,
   renderWithProviders,
   suppressConsoleErrors,
   testManagedImages,
+  bitcoinServiceMock,
 } from 'utils/tests';
 import SendOnChainModal from './SendOnChainModal';
-
-const bitcoindServiceMock = injections.bitcoindService as jest.Mocked<BitcoindLibrary>;
 
 describe('SendOnChainModal', () => {
   let unmount: () => void;
@@ -123,13 +120,13 @@ describe('SendOnChainModal', () => {
   });
 
   it('should display the correct balance for the selected backend', async () => {
-    bitcoindServiceMock.getWalletInfo.mockResolvedValueOnce({ balance: 123 } as any);
-    bitcoindServiceMock.getWalletInfo.mockResolvedValueOnce({ balance: 456 } as any);
-    bitcoindServiceMock.getWalletInfo.mockResolvedValueOnce({ balance: 0 } as any);
+    bitcoinServiceMock.getWalletInfo.mockResolvedValueOnce({ balance: 123 } as any);
+    bitcoinServiceMock.getWalletInfo.mockResolvedValueOnce({ balance: 456 } as any);
+    bitcoinServiceMock.getWalletInfo.mockResolvedValueOnce({ balance: 0 } as any);
     const { findByText, changeSelect, store, network } = await renderComponent();
-    store.getActions().bitcoind.getInfo(network.nodes.bitcoin[0]);
-    store.getActions().bitcoind.getInfo(network.nodes.bitcoin[1]);
-    store.getActions().bitcoind.getInfo(network.nodes.bitcoin[2]);
+    store.getActions().bitcoin.getInfo(network.nodes.bitcoin[0]);
+    store.getActions().bitcoin.getInfo(network.nodes.bitcoin[1]);
+    store.getActions().bitcoin.getInfo(network.nodes.bitcoin[2]);
     expect(await findByText('Balance: 123 BTC')).toBeInTheDocument();
     changeSelect('From Bitcoin Node', 'backend2');
     expect(await findByText('Balance: 456 BTC')).toBeInTheDocument();
@@ -139,14 +136,14 @@ describe('SendOnChainModal', () => {
 
   describe('with form submitted', () => {
     beforeEach(() => {
-      bitcoindServiceMock.getWalletInfo.mockResolvedValue({ balance: 123 } as any);
-      bitcoindServiceMock.mine.mockResolvedValue([]);
-      bitcoindServiceMock.sendFunds.mockResolvedValue('txid123');
+      bitcoinServiceMock.getWalletInfo.mockResolvedValue({ balance: 123 } as any);
+      bitcoinServiceMock.mine.mockResolvedValue([]);
+      bitcoinServiceMock.sendFunds.mockResolvedValue('txid123');
     });
 
     it('should send coins successfully', async () => {
       const { getByText, getByLabelText, store, network } = await renderComponent();
-      store.getActions().bitcoind.getInfo(network.nodes.bitcoin[0]);
+      store.getActions().bitcoin.getInfo(network.nodes.bitcoin[0]);
       fireEvent.change(getByLabelText('Amount (BTC)'), { target: { value: '0.001' } });
       fireEvent.change(getByLabelText('Destination Onchain Address'), {
         target: { value: 'bc1...' },
@@ -156,13 +153,13 @@ describe('SendOnChainModal', () => {
         expect(store.getState().modals.sendOnChain.visible).toBe(false);
       });
       const node = network.nodes.bitcoin[0];
-      expect(bitcoindServiceMock.sendFunds).toHaveBeenCalledWith(node, 'bc1...', 0.001);
-      expect(bitcoindServiceMock.mine).toHaveBeenCalledWith(6, node);
+      expect(bitcoinServiceMock.sendFunds).toHaveBeenCalledWith(node, 'bc1...', 0.001);
+      expect(bitcoinServiceMock.mine).toHaveBeenCalledWith(6, node);
     });
 
     it('should not mine block when the option is unchecked', async () => {
       const { getByText, getByLabelText, store, network } = await renderComponent();
-      store.getActions().bitcoind.getInfo(network.nodes.bitcoin[0]);
+      store.getActions().bitcoin.getInfo(network.nodes.bitcoin[0]);
       fireEvent.change(getByLabelText('Amount (BTC)'), { target: { value: '0.001' } });
       fireEvent.change(getByLabelText('Destination Onchain Address'), {
         target: { value: 'bc1...' },
@@ -175,13 +172,13 @@ describe('SendOnChainModal', () => {
         expect(store.getState().modals.sendOnChain.visible).toBe(false);
       });
       const node = network.nodes.bitcoin[0];
-      expect(bitcoindServiceMock.sendFunds).toHaveBeenCalledWith(node, 'bc1...', 0.001);
-      expect(bitcoindServiceMock.mine).not.toHaveBeenCalled();
+      expect(bitcoinServiceMock.sendFunds).toHaveBeenCalledWith(node, 'bc1...', 0.001);
+      expect(bitcoinServiceMock.mine).not.toHaveBeenCalled();
     });
 
     it('should display an error when amount is above balance', async () => {
       const { getByText, getByLabelText, store, network } = await renderComponent();
-      store.getActions().bitcoind.getInfo(network.nodes.bitcoin[0]);
+      store.getActions().bitcoin.getInfo(network.nodes.bitcoin[0]);
       fireEvent.change(getByLabelText('Amount (BTC)'), { target: { value: '125' } });
       fireEvent.change(getByLabelText('Destination Onchain Address'), {
         target: { value: 'bc1...' },
@@ -196,9 +193,9 @@ describe('SendOnChainModal', () => {
     });
 
     it('should display an error when sending funds fails', async () => {
-      bitcoindServiceMock.sendFunds.mockRejectedValue(new Error('error-msg'));
+      bitcoinServiceMock.sendFunds.mockRejectedValue(new Error('error-msg'));
       const { getByText, getByLabelText, store, network } = await renderComponent();
-      store.getActions().bitcoind.getInfo(network.nodes.bitcoin[0]);
+      store.getActions().bitcoin.getInfo(network.nodes.bitcoin[0]);
       fireEvent.change(getByLabelText('Amount (BTC)'), { target: { value: '0.001' } });
       fireEvent.change(getByLabelText('Destination Onchain Address'), {
         target: { value: 'bc1...' },

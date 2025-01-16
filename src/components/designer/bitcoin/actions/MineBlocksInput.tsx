@@ -22,7 +22,7 @@ const MineBlocksInput: React.FC<{ node: BitcoinNode }> = ({ node }) => {
   const { l } = usePrefixedTranslation('cmps.designer.bitcoind.MineBlocksInput');
   const [value, setValue] = useState(6);
   const { notify } = useStoreActions(s => s.app);
-  const { mine } = useStoreActions(s => s.bitcoind);
+  const { mine } = useStoreActions(s => s.bitcoin);
   const mineAsync = useAsyncCallback(async () => {
     try {
       await mine({ blocks: value, node });

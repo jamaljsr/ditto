@@ -69,6 +69,11 @@ export interface BitcoinNode extends CommonNode {
   type: 'bitcoin';
   implementation: 'bitcoind' | 'btcd';
   peers: string[];
+  ports: Record<string, number>;
+}
+
+export interface BitcoindNode extends BitcoinNode {
+  implementation: 'bitcoind';
   ports: {
     rpc: number;
     p2p: number;

@@ -3,10 +3,10 @@ import { fireEvent, waitFor } from '@testing-library/dom';
 import { Status } from 'shared/types';
 import {
   getNetwork,
-  injections,
   lightningServiceMock,
   renderWithProviders,
   tapServiceMock,
+  bitcoinServiceMock,
 } from 'utils/tests';
 import MineBlocksInput from './MineBlocksInput';
 
@@ -50,7 +50,7 @@ describe('MineBlocksInput', () => {
   });
 
   it('should mine a block when the button is clicked', async () => {
-    const mineMock = injections.bitcoindService.mine as jest.Mock;
+    const mineMock = bitcoinServiceMock.mine as jest.Mock;
     mineMock.mockResolvedValue(true);
     const { input, btn, store } = renderComponent();
     const numBlocks = 5;
@@ -63,7 +63,7 @@ describe('MineBlocksInput', () => {
   });
 
   it('should mine 1 block when a invalid value is specified', async () => {
-    const mineMock = injections.bitcoindService.mine as jest.Mock;
+    const mineMock = bitcoinServiceMock.mine as jest.Mock;
     mineMock.mockResolvedValue(true);
     const { input, btn, store } = renderComponent();
     fireEvent.change(input, { target: { value: 'asdf' } });
@@ -75,7 +75,7 @@ describe('MineBlocksInput', () => {
   });
 
   it('should display an error if mining fails', async () => {
-    const mineMock = injections.bitcoindService.mine as jest.Mock;
+    const mineMock = bitcoinServiceMock.mine as jest.Mock;
     mineMock.mockRejectedValue(new Error('connection failed'));
     const { input, btn, findByText } = renderComponent();
     const numBlocks = 5;
@@ -93,7 +93,7 @@ describe('MineBlocksInput', () => {
   });
 
   it('should display an error if lightning nodes cannot update after mining', async () => {
-    const mineMock = injections.bitcoindService.mine as jest.Mock;
+    const mineMock = bitcoinServiceMock.mine as jest.Mock;
     mineMock.mockResolvedValue(true);
     lightningServiceMock.getInfo.mockRejectedValueOnce(new Error('info-error'));
     const { input, btn, findByText } = renderComponent(Status.Started);
@@ -104,7 +104,7 @@ describe('MineBlocksInput', () => {
   });
 
   it('should display an error if tap nodes cannot update after mining', async () => {
-    const mineMock = injections.bitcoindService.mine as jest.Mock;
+    const mineMock = bitcoinServiceMock.mine as jest.Mock;
     mineMock.mockResolvedValue(true);
     tapServiceMock.listAssets.mockRejectedValueOnce(new Error('info-error'));
     const { input, btn, findByText } = renderComponent(Status.Started);

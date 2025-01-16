@@ -10,6 +10,7 @@ import { initChartFromNetwork } from 'utils/chart';
 import { defaultRepoState } from 'utils/constants';
 import * as files from 'utils/files';
 import {
+  bitcoinServiceMock,
   getNetwork,
   injections,
   lightningServiceMock,
@@ -19,7 +20,7 @@ import {
   testRepoState,
 } from 'utils/tests';
 import appModel from './app';
-import bitcoindModel from './bitcoind';
+import bitcoinModel from './bitcoin';
 import designerModel from './designer';
 import lightningModel from './lightning';
 import litModel from './lit';
@@ -36,9 +37,6 @@ const asyncUtilMock = asyncUtil as jest.Mocked<typeof asyncUtil>;
 const filesMock = files as jest.Mocked<typeof files>;
 const logMock = log as jest.Mocked<typeof log>;
 const detectPortMock = detectPort as jest.Mock;
-const bitcoindServiceMock = injections.bitcoindService as jest.Mocked<
-  typeof injections.bitcoindService
->;
 const electronMock = electron as jest.Mocked<typeof electron>;
 
 describe('Network model', () => {
@@ -46,7 +44,7 @@ describe('Network model', () => {
     app: appModel,
     network: networkModel,
     lightning: lightningModel,
-    bitcoind: bitcoindModel,
+    bitcoin: bitcoinModel,
     designer: designerModel,
     tap: tapModel,
     lit: litModel,
@@ -75,7 +73,7 @@ describe('Network model', () => {
     // always return true immediately
     filesMock.waitForFile.mockResolvedValue();
     lightningServiceMock.waitUntilOnline.mockResolvedValue();
-    bitcoindServiceMock.waitUntilOnline.mockResolvedValue();
+    bitcoinServiceMock.waitUntilOnline.mockResolvedValue();
     litdServiceMock.waitUntilOnline.mockResolvedValue();
   });
 
@@ -577,7 +575,7 @@ describe('Network model', () => {
     });
 
     it('should set bitcoind node status to error if the node startup fails', async () => {
-      bitcoindServiceMock.waitUntilOnline.mockRejectedValue(new Error('test-error'));
+      bitcoinServiceMock.waitUntilOnline.mockRejectedValue(new Error('test-error'));
       const { start } = store.getActions().network;
       await start(firstNetwork().id);
       const { bitcoin } = firstNetwork().nodes;
@@ -586,7 +584,7 @@ describe('Network model', () => {
     });
 
     it('should mine a block on startup', async () => {
-      bitcoindServiceMock.getBlockchainInfo.mockResolvedValue({ blocks: 0 } as any);
+      bitcoinServiceMock.getBlockchainInfo.mockResolvedValue({ blocks: 0 } as any);
       const { start } = store.getActions().network;
       const network = firstNetwork();
       await start(network.id);
@@ -594,11 +592,11 @@ describe('Network model', () => {
         ...firstNetwork().nodes.bitcoin[0],
         status: Status.Starting,
       };
-      expect(bitcoindServiceMock.mine).toHaveBeenCalledWith(1, btcNode);
+      expect(bitcoinServiceMock.mine).toHaveBeenCalledWith(1, btcNode);
     });
 
     it('should not throw when mining a block on startup fails', async () => {
-      bitcoindServiceMock.mine.mockRejectedValue(new Error('test-error'));
+      bitcoinServiceMock.mine.mockRejectedValue(new Error('test-error'));
       const { start } = store.getActions().network;
       const network = firstNetwork();
       await expect(start(network.id)).resolves.not.toThrow();
@@ -606,7 +604,7 @@ describe('Network model', () => {
         ...firstNetwork().nodes.bitcoin[0],
         status: Status.Starting,
       };
-      expect(bitcoindServiceMock.mine).toHaveBeenCalledWith(1, btcNode);
+      expect(bitcoinServiceMock.mine).toHaveBeenCalledWith(1, btcNode);
     });
 
     it('should not save compose file and networks if all ports are available', async () => {
@@ -988,7 +986,7 @@ describe('Network model', () => {
       const { monitorStartup } = store.getActions().network;
       await monitorStartup([]);
       expect(lightningServiceMock.waitUntilOnline).not.toHaveBeenCalled();
-      expect(bitcoindServiceMock.waitUntilOnline).not.toHaveBeenCalled();
+      expect(bitcoinServiceMock.waitUntilOnline).not.toHaveBeenCalled();
     });
 
     it('should fail with an invalid network id', async () => {
@@ -1011,8 +1009,8 @@ describe('Network model', () => {
       const { monitorStartup } = store.getActions().network;
       await monitorStartup(firstNetwork().nodes.bitcoin);
       await waitFor(() => {
-        expect(bitcoindServiceMock.waitUntilOnline).toHaveBeenCalled();
-        expect(bitcoindServiceMock.connectPeers).toHaveBeenCalled();
+        expect(bitcoinServiceMock.waitUntilOnline).toHaveBeenCalled();
+        expect(bitcoinServiceMock.connectPeers).toHaveBeenCalled();
       });
     });
 
@@ -1021,7 +1019,7 @@ describe('Network model', () => {
       const { bitcoin } = firstNetwork().nodes;
       bitcoin[0].type = 'asdf' as any;
       await monitorStartup(bitcoin);
-      expect(bitcoindServiceMock.waitUntilOnline).not.toHaveBeenCalled();
+      expect(bitcoinServiceMock.waitUntilOnline).not.toHaveBeenCalled();
     });
   });
 
@@ -1089,7 +1087,7 @@ describe('Network model', () => {
         .network.autoMine({ id: networks[0].id, mode: AutoMineMode.Auto30s });
 
       jest.advanceTimersByTime(65000);
-      expect(bitcoindServiceMock.mine).toHaveBeenCalledTimes(2);
+      expect(bitcoinServiceMock.mine).toHaveBeenCalledTimes(2);
 
       await store
         .getActions()
@@ -1097,7 +1095,7 @@ describe('Network model', () => {
 
       jest.advanceTimersByTime(65000);
       // the call count is not incremented
-      expect(bitcoindServiceMock.mine).toHaveBeenCalledTimes(2);
+      expect(bitcoinServiceMock.mine).toHaveBeenCalledTimes(2);
 
       jest.useRealTimers();
     });

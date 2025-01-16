@@ -16,10 +16,10 @@ const SendOnChainModal: React.FC<Props> = ({ network }) => {
   const { l } = usePrefixedTranslation('cmps.designer.bitcoind.actions.SendOnChainModal');
   const [form] = Form.useForm();
   const { visible, backendName } = useStoreState(s => s.modals.sendOnChain);
-  const { nodes } = useStoreState(s => s.bitcoind);
+  const { nodes } = useStoreState(s => s.bitcoin);
   const { hideSendOnChain } = useStoreActions(s => s.modals);
   const { notify } = useStoreActions(s => s.app);
-  const { sendFunds } = useStoreActions(s => s.bitcoind);
+  const { sendFunds } = useStoreActions(s => s.bitcoin);
   const [selected, setSelected] = useState(backendName || '');
 
   const balance: number = useMemo(() => {

@@ -506,7 +506,7 @@ const networkModel: NetworkModel = {
       if (!network) throw new Error(l('networkByIdErr', { networkId: node.networkId }));
       const { dockerRepoState } = getStoreState().app;
       const { dockerService, lightningFactory } = injections;
-      const { bitcoind, designer } = getStoreActions();
+      const { bitcoin: bitcoinActions, designer } = getStoreActions();
       const { bitcoin, lightning } = network.nodes;
 
       if (bitcoin.length === 1) throw new Error(l('removeLastErr'));
@@ -544,7 +544,7 @@ const networkModel: NetworkModel = {
       // remove the node from the network
       network.nodes.bitcoin = bitcoin.filter(n => n !== node);
       // remove the node's data from the bitcoind redux state
-      bitcoind.removeNode(node);
+      bitcoinActions.removeNode(node);
       if (network.status === Status.Started) {
         // restart the whole network if it is running
         await actions.stop(network.id);
@@ -832,15 +832,16 @@ const networkModel: NetworkModel = {
           const btc = node as BitcoinNode;
           // wait for bitcoind nodes to come online before updating their status
           // use .then() to continue execution while the promises are waiting to complete
-          const promise = injections.bitcoindService
+          const promise = injections.bitcoinFactory
+            .getService(btc)
             .waitUntilOnline(btc)
             .then(async () => {
               actions.setStatus({ id, status: Status.Started, only: btc.name });
               // connect each bitcoin node to it's peers so tx & block propagation is fast
-              await injections.bitcoindService.connectPeers(btc);
+              await injections.bitcoinFactory.getService(btc).connectPeers(btc);
               // create a default wallet since it's not automatic on v0.21.0 and up
-              await injections.bitcoindService.createDefaultWallet(btc);
-              await getStoreActions().bitcoind.getInfo(btc);
+              await injections.bitcoinFactory.getService(btc).createDefaultWallet(btc);
+              await getStoreActions().bitcoin.getInfo(btc);
             })
             .catch(error =>
               actions.setStatus({ id, status: Status.Error, only: btc.name, error }),
@@ -865,7 +866,7 @@ const networkModel: NetworkModel = {
         await Promise.all(btcNodesOnline)
           .then(async () => {
             await delay(2000);
-            await getStoreActions().bitcoind.mine({ node, blocks: 1 });
+            await getStoreActions().bitcoin.mine({ node, blocks: 1 });
           })
           .catch(e => info('Failed to mine a block after network startup', e));
       }
@@ -912,7 +913,7 @@ const networkModel: NetworkModel = {
     network.nodes.lightning
       .filter(n => n.implementation === 'litd')
       .forEach(n => getStoreActions().lit.removeNode(n.name));
-    network.nodes.bitcoin.forEach(n => getStoreActions().bitcoind.removeNode(n));
+    network.nodes.bitcoin.forEach(n => getStoreActions().bitcoin.removeNode(n));
     network.nodes.tap.forEach(n => getStoreActions().tap.removeNode(n.name));
     await actions.save();
     await getStoreActions().app.clearAppCache();
@@ -978,18 +979,18 @@ const networkModel: NetworkModel = {
     const network = networks.find(n => n.id === id);
     if (!network) throw new Error(l('networkByIdErr', { id }));
 
-    const { bitcoind } = getStoreActions();
+    const { bitcoin } = getStoreActions();
     const node = network.nodes.bitcoin[0];
 
     actions.setMiningState({ id, mining: true });
 
     try {
-      await bitcoind.mine({ node, blocks: 1 });
+      await bitcoin.mine({ node, blocks: 1 });
     } catch (e) {
       // No error displayed to the user since this is could be a background running task
     }
 
-    bitcoind.getInfo(node);
+    bitcoin.getInfo(node);
     actions.setMiningState({ id, mining: false });
   }),
   autoMine: thunk(async (actions, { id, mode, networkLoading }, { getState }) => {
@@ -1052,7 +1053,7 @@ const networkModel: NetworkModel = {
           getStoreActions().lightning.removeNode(oldNodeName);
           break;
         case 'bitcoin':
-          getStoreActions().bitcoind.removeNode(node);
+          getStoreActions().bitcoin.removeNode(node);
           break;
         case 'tap':
           getStoreActions().tap.removeNode(oldNodeName);

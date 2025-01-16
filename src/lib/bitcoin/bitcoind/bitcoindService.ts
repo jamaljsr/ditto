@@ -1,7 +1,7 @@
 import logger from 'electron-log';
 import BitcoinCore from 'bitcoin-core';
 import { BitcoinNode } from 'shared/types';
-import { BitcoindLibrary } from 'types';
+import { BitcoinService } from 'types';
 import { delay, waitFor } from 'utils/async';
 import {
   bitcoinCredentials,
@@ -10,7 +10,7 @@ import {
   INITIAL_BLOCK_REWARD,
 } from 'utils/constants';
 
-class BitcoindService implements BitcoindLibrary {
+class BitcoindService implements BitcoinService {
   createClient(node: BitcoinNode) {
     return new BitcoinCore({
       host: '127.0.0.1',
