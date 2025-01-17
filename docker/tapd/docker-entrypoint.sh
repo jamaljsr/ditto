@@ -10,7 +10,7 @@ if ! id tap > /dev/null 2>&1; then
 
   echo "adding user tap ($USERID:$GROUPID)"
   groupadd -f -g $GROUPID tap
-  useradd -r -u $USERID -g $GROUPID tap
+  useradd -M -u $USERID -g $GROUPID tap
   chown -R $USERID:$GROUPID /home/tap
 fi
 

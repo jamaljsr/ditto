@@ -13,7 +13,7 @@ if ! id clightning > /dev/null 2>&1; then
 
   echo "adding user clightning ($USERID:$GROUPID)"
   groupadd -f -g $GROUPID clightning
-  useradd -r -u $USERID -g $GROUPID clightning
+  useradd -M -u $USERID -g $GROUPID clightning
   # ensure correct ownership of user home dir
   mkdir -p /home/clightning
   chown -R $USERID:$GROUPID /home/clightning

@@ -10,7 +10,7 @@ if ! id litd > /dev/null 2>&1; then
 
   echo "adding user litd ($USERID:$GROUPID)"
   groupadd -f -g $GROUPID litd
-  useradd -r -u $USERID -g $GROUPID litd
+  useradd -M -u $USERID -g $GROUPID litd
   chown -R $USERID:$GROUPID /home/litd
 fi
 

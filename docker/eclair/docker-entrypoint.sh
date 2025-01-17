@@ -13,7 +13,7 @@ if ! id eclair > /dev/null 2>&1; then
 
   echo "adding user eclair ($USERID:$GROUPID)"
   groupadd -f -g $GROUPID eclair
-  useradd -r -u $USERID -g $GROUPID eclair
+  useradd -M -u $USERID -g $GROUPID eclair
   # ensure correct ownership of user home dir
   mkdir -p /home/eclair
   chown -R $USERID:$GROUPID /home/eclair
@@ -25,7 +25,7 @@ if [ "$1" = "polar-eclair" ]; then
   for arg in "$@"
   do
     if [ "${arg:0:21}" = "--server.public-ips.0" ]; then
-      # replace the hostname provided in this arg with the IP address of the containing 
+      # replace the hostname provided in this arg with the IP address of the containing
       # because Eclair v8+ began including the DNS hostname in the NodeAnnouncements and
       # LND throws an error when parsing these messages
       JAVA_OPTS="$JAVA_OPTS -Declair.server.public-ips.0=$(hostname -i)"
