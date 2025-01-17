@@ -72,6 +72,13 @@ Alternative and older version binaries can be found in the [GitHub releases](htt
 
 Polar's translations are managed on [Crowdin](https://crowdin.com/project/polar). The initial translations of 10 languages were done by machine (Google Translate) and are likely to not be 100% accurate. If you speak multiple languages and wish to help with translations, please feel free to head over to the [project page](https://crowdin.com/project/polar) on Crowdin and submit updated strings. This assistance would be greatly appreciated.
 
+## Usage Examples
+
+Here is a practical example of how to interact with Lightning Network nodes using Polar as a development environment:
+- [lightning-polar-ejemplo](https://github.com/kleyberthsantos/lightning-polar-ejemplo)
+
+*This example is provided in Spanish to support the Hispanic community.*
+
 ## Development
 
 If you would like to learn how to package Polar from source code or want to fix a bug or add a new feature, please see [CONTRIBUTING](https://github.com/jamaljsr/polar/blob/master/CONTRIBUTING.md) for detailed instructions.
